@@ -1,0 +1,6 @@
+pytest
+redis
+fastapi>=0.110.0
+uvicorn[standard]
+celery
+ranking-challenge
