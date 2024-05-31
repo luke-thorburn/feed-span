@@ -39,6 +39,6 @@ If you have already run `make run`, the images for all components should already
 
 You can also just build a single component and run it.
 
-1. Build image: e.g., `sudo docker build -f docker/Dockerfile.ranking_server -t ranking_server .`
-2. Run: e.g., `sudo docker run ranking_server`
+1. Build image: e.g., `docker build -f docker/Dockerfile.ranking_server -t ranking_server .`
+2. Run: e.g., `docker run ranking_server`
 
