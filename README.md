@@ -2,7 +2,7 @@
 
 Submission for the Prosocial Ranking Challenge.
 
-**Note** --- the main project files for each of the components are located in `examples/combined`. This is a relic of starting from the template code which we can fix at some point.
+**Note** — the main project files for each of the components are located in `examples/combined`. This directory structure is a relic of starting from the template code which we can fix at some point.
 
 ## How to run locally
 
