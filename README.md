@@ -2,6 +2,8 @@
 
 Submission for the Prosocial Ranking Challenge.
 
+**Note** --- the main project files for each of the components are located in `examples/combined`. This is a relic of starting from the template code which we can fix at some point.
+
 ## How to run locally
 
 All commands are executed from the root directory.
@@ -21,7 +23,7 @@ All commands are executed from the root directory.
 
 To (i) build the Docker images for all components and (ii) start them running in containers with a single command, use the following steps.
 
-1. Run `make run`.
+1. Run `make run`
 
 ### Build and run a SINGLE component
 
