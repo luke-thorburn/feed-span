@@ -1,5 +1,13 @@
+
+# ---------------------------------------------------------------------------- #
+# IMPORTS
+
 import asyncio
 import logging
+
+from apify_client import ApifyClient
+import csv
+
 import os
 from datetime import datetime
 from typing import Optional
@@ -10,6 +18,14 @@ from util.scheduler import ScheduledTask, schedule_tasks
 from scraper_worker.celery_app import app
 from scraper_worker.ingester import ErrorData, IngestData, SuccessData
 
+with open('sources.csv') as file:
+    sources = []
+    for row in csv.DictReader(file):
+        sources.append(row)
+
+# ---------------------------------------------------------------------------- #
+# LOGGING
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
@@ -17,6 +33,10 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+
+
+# ---------------------------------------------------------------------------- #
+# HELPER FUNCTIONS
 
 def send_result(task_id: str, results: list[dict], error: Optional[str] = None):
     results_endpoint = os.getenv("RESULTS_ENDPOINT")
@@ -52,13 +72,38 @@ def process_error(task_id: str, message: str):
     return send_result(task_id, [], message)
 
 
-async def _apify_query(query: str, limit: int = 10) -> list[dict]:
+async def _apify_query(platform: str, limit: int = 10) -> list[dict]:
     
-    # TODO - Add API calls here.
+    client = ApifyClient('apify_api_12Sd7dsuoRPMiuqLZDuMr7JGkIx7jR47CObh')
+
     results = []
+
+    if platform == 'facebook':
+
+        run_input = {
+            "startUrls": [ { "url": src['FB_URL'] } for src in sources if src['FB_URL'] ],
+            "resultsLimit": 100,
+        }
+        
+        run = client.actor("KoJrdxJCTtpon81KY").call(run_input=run_input)
+        
+        results = client.dataset(run["defaultDatasetId"]).list_items(
+            fields="url,time,text"
+        ).items
     
+    # elif platform == 'twitter':
+    
+    #     ...
+    
+    # elif platform == 'reddit':
+    
+    #     ...
+
     return results
 
+
+# ---------------------------------------------------------------------------- #
+# TASKS
 
 @app.task(bind=True)
 def apify_query(self, platform: str, limit: int = 10) -> None:
@@ -76,6 +121,9 @@ def apify_query(self, platform: str, limit: int = 10) -> None:
     except Exception as e:
         process_error(task_id, str(e))
 
+
+# ---------------------------------------------------------------------------- #
+# SCHEDULING
 
 @app.on_after_finalize.connect
 def setup_periodic_tasks(sender, **kwargs):

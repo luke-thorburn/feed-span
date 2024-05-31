@@ -1,5 +1,7 @@
 celery[pytest]
 fastapi
+apify_client
+csv
 pytest
 redis
 psycopg2
