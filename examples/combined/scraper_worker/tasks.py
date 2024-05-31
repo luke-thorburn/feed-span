@@ -74,7 +74,8 @@ def process_error(task_id: str, message: str):
 
 async def _apify_query(platform: str, limit: int = 10) -> list[dict]:
     
-    client = ApifyClient('apify_api_12Sd7dsuoRPMiuqLZDuMr7JGkIx7jR47CObh')
+    APIFY_API_KEY = os.getenv("APIFY_API_KEY")
+    client = ApifyClient(APIFY_API_KEY)
 
     results = []
 
