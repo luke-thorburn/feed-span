@@ -4,9 +4,9 @@
 
 ## Quick Reference
 
-### Component Locations
+These variables are specified in `docker-compose.yml`. Copied here for reference.
 
-These are specified in `docker-compose.yml`. Copied here for reference.
+### Component Locations
 
 | Component           | Location                                     |
 | ------------------- | -------------------------------------------- |
@@ -17,8 +17,6 @@ These are specified in `docker-compose.yml`. Copied here for reference.
 | redis-celery-broker | `redis://redis-celery-broker:6380`           |
 
 ### Environment Variables
-
-These are specified in `docker-compose.yml`. Copied here for reference.
 
     CELERY_BACKEND: redis://redis-celery-broker:6380
     CELERY_BROKER: redis://redis-celery-broker:6380
