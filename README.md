@@ -1,7 +1,3 @@
-# feed-span
-
-Submission for the Prosocial Ranking Challenge.
-
 **Note** — the main project files for each of the components are located in `examples/combined`. This directory structure is a relic of starting from the template code which we can fix at some point.
 
 **Helpful Docs** — [Poetry](https://python-poetry.org/docs/basic-usage/),  [Celery](https://docs.celeryq.dev/en/stable/)
