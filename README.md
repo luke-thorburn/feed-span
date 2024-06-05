@@ -6,7 +6,9 @@ Submission for the Prosocial Ranking Challenge.
 
 **Helpful Docs** — [Poetry](https://python-poetry.org/docs/basic-usage/),  [Celery](https://docs.celeryq.dev/en/stable/)
 
-## Component Locations
+## Quick Reference
+
+### Component Locations
 
 These are specified in `docker-compose.yml`. Copied here for reference.
 
@@ -18,7 +20,7 @@ These are specified in `docker-compose.yml`. Copied here for reference.
 | scraper-ingester    | `0.0.0.0:8002`                               |
 | redis-celery-broker | `redis://redis-celery-broker:6380`           |
 
-## Environment Variables
+### Environment Variables
 
 These are specified in `docker-compose.yml`. Copied here for reference.
 
