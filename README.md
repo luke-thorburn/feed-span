@@ -11,7 +11,7 @@ Submission for the Prosocial Ranking Challenge.
 These are specified in `docker-compose.yml`. Copied here for reference.
 
 | Component           | Location                                     |
-| ------------------- | ------------------------------------------ - |
+| ------------------- | -------------------------------------------- |
 | ranker              | `0.0.0.0:8001`                               |
 | postgres            | `postgres://postgres:postgres@database:5432` |
 | redis               | `redis://redis:6379`                         |
