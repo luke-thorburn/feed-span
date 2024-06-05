@@ -33,8 +33,8 @@ redis = ">= 4.4.4"
 psycopg2-binary = "*"
 sqlalchemy = "*"
 celery-redbeat = "*"
-pandas = "^1.4.2" 
-twscrape = "^0.1.0"
+pandas = "^1.4.2"
+apify-client = "^1.7.0"
 
 [tool.poetry.dev-dependencies]
 pip-tools = "*"

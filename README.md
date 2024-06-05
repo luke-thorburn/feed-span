@@ -42,3 +42,40 @@ You can also just build a single component and run it.
 1. Build image: e.g., `docker build -f docker/Dockerfile.ranking_server -t ranking_server .`
 2. Run: e.g., `docker run ranking_server`
 
+## Helpful Links
+
+- [Poetry](https://python-poetry.org/docs/basic-usage/)
+- [Celery](https://docs.celeryq.dev/en/stable/)
+
+## Component Locations
+
+These are specified in `docker-compose.yml`. Copied here for reference.
+
+| Component           | Location                                   |
+| ------------------- | ------------------------------------------ |
+| ranker              | 0.0.0.0:8001                               |
+| postgres            | postgres://postgres:postgres@database:5432 |
+| redis               | redis://redis:6379                         |
+| scraper-ingester    | 0.0.0.0:8002                               |
+| redis-celery-broker | redis://redis-celery-broker:6380           |
+
+## Environment Variables
+
+These are specified in `docker-compose.yml`. Copied here for reference.
+
+    CELERY_BACKEND: redis://redis-celery-broker:6380
+    CELERY_BROKER: redis://redis-celery-broker:6380
+
+    PGPORT: "5432"
+    POSTGRES_DB: "postgres"
+    POSTGRES_HOST_AUTH_METHOD: "trust"
+    POSTGRES_PASSWORD: "postgres"
+    POSTGRES_USER: "postgres"
+
+    POSTS_DB_URI: postgres://postgres:postgres@database:5432/posts?sslmode=disable
+
+    PYTHONPATH: /app/examples/combined
+
+    REDIS_CONNECTION_STRING: redis://redis:6379
+
+    SCRAPER_DB_URI: postgres://postgres:postgres@database:5432/scraper?sslmode=disable

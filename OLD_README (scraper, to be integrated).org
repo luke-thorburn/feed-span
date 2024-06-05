@@ -18,18 +18,6 @@ authenticated API endpoint, for example, ~api/1.1/users/recommendations.json~,
 and copy the cookie from the /Headers/ section (or right-click on the request,
 select "copy as cURL", and get the cookie from the cURL command).
 
-It is important to note that this flow is for the demo only and is brittle. *Do
-not use it in production.*
-
-Once Twitter credentials are available, they need to be exported as environment
-variables:
-
-#+begin_src shell
-export TWITTER_SESSION_COOKIE='my-cookie'
-export TWITTER_USERNAME=myusername
-export TWITTER_EMAIL=myemail@domain.com
-#+end_src
-
 The scraping jobs are scheduled using Celery Beat scheduler, and therefore need
 to be written as Celery tasks. Importantly, because the scraper can receive no
 data from the rest of the infrastructure, these tasks cannot be controlled once

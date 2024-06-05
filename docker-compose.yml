@@ -91,9 +91,6 @@ services:
       CELERY_BROKER: redis://redis-celery-broker:6380
       CELERY_BACKEND: redis://redis-celery-broker:6380
       SCRAPER_DB_URI: postgres://postgres:postgres@database:5432/scraper?sslmode=disable
-      TWITTER_SESSION_COOKIE: ${TWITTER_SESSION_COOKIE}
-      TWITTER_USERNAME: ${TWITTER_USERNAME}
-      TWITTER_EMAIL: ${TWITTER_EMAIL}
       RESULTS_ENDPOINT: http://scraper-ingester:8002/data/scraper
     command: ["poetry", "run", "celery", "-A", "scraper_worker.tasks", "worker", "-Q", "scraper", "--loglevel=info"]
 
