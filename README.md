@@ -72,3 +72,9 @@ You can also just build a single component and run it.
 
 1. Build image: e.g., `docker build -f docker/Dockerfile.ranking_server -t ranking_server .`
 2. Run: e.g., `docker run ranking_server`
+
+
+### Note on classifiers
+
+Download the saved models from this [Google Drive folder](https://drive.google.com/drive/folders/1vGKXNIxqbAoQjZdHnVs_oHFuLsb7Ykhm?usp=sharing)
+Then, copy both models in the parent directory containing the classifiers, i.e `examples/combined/ranking_server` 
