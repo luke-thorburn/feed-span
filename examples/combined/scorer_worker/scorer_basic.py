@@ -24,6 +24,7 @@ from celery.exceptions import TimeoutError
 from celery.utils import uuid
 
 from scorer_worker.celery_app import app as celery_app
+from ranking_server.classifiers import areCivic, getBridgeScore
 
 logging.basicConfig(
     level=logging.INFO,
