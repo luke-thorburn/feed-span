@@ -18,6 +18,8 @@ These variables are specified in `docker-compose.yml`. Copied here for reference
 
 ### Environment Variables
 
+    PYTHONPATH: /app/examples/combined
+
     CELERY_BACKEND: redis://redis-celery-broker:6380
     CELERY_BROKER: redis://redis-celery-broker:6380
 
@@ -27,13 +29,10 @@ These variables are specified in `docker-compose.yml`. Copied here for reference
     POSTGRES_PASSWORD: "postgres"
     POSTGRES_USER: "postgres"
 
-    POSTS_DB_URI: postgres://postgres:postgres@database:5432/posts?sslmode=disable
-
-    PYTHONPATH: /app/examples/combined
+    POSTS_DB_URI: postgres://postgres:postgres@database:5432/main?sslmode=disable
+    SCRAPER_DB_URI: postgres://postgres:postgres@database:5432/main?sslmode=disable
 
     REDIS_CONNECTION_STRING: redis://redis:6379
-
-    SCRAPER_DB_URI: postgres://postgres:postgres@database:5432/scraper?sslmode=disable
 
 ## How to run locally
 
@@ -78,3 +77,32 @@ You can also just build a single component and run it.
 
 Download the saved models from this [Google Drive folder](https://drive.google.com/drive/folders/1vGKXNIxqbAoQjZdHnVs_oHFuLsb7Ykhm?usp=sharing)
 Then, copy both models in the parent directory containing the classifiers, i.e `examples/combined/ranking_server` 
+
+
+### How to inspect databases
+
+These commands are for Linux. Run while all the components are running (e.g., after `sudo make run`).
+
+#### Postgres
+
+1. `sudo docker exec -it feed-span-database-1 bash`
+2. `psql -U postgres -d main`
+3. Then explore the database using psql. E.g.,
+    - `\dt` to list tables
+    - `\d table_name` to list columns
+    - Or any SQL query.
+
+#### Redis
+
+1. `sudo docker exec -it feed-span-redis-1 bash`
+2. `redis-cli`
+3. Then explore the database using the redit query language. E.g.,
+    - `KEYS *` to get a list of keys
+    - `JSON.GET key` to inspect a key of type json.
+
+### Clearing Space
+
+I find that my laptop gradually fills up when repeatedly building all these docker images and volumes. To clear space, run:
+
+1. `sudo docker systemctl prune -a`
+2. `sudo docker volume prune -a`
