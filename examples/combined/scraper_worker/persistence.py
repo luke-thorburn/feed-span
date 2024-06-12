@@ -12,8 +12,8 @@ import scraper_worker.sql_statements as my_sql
 
 DuplicateDatabase = psycopg2.errors.lookup("42P04")
 
-DATA_TABLE_NAME = "scraper_data"
-ERR_TABLE_NAME = "scraper_errors"
+DATA_TABLE_NAME = "posts"
+ERR_TABLE_NAME = "logs"
 
 DB_URI = os.getenv("SCRAPER_DB_URI")
 assert DB_URI, "SCRAPER_DB_URI environment variable must be set"
@@ -37,10 +37,10 @@ def ensure_database():
 def ensure_tables(con: psycopg2.extensions.connection):
     cur = con.cursor()
     ddl_statements = [
-        my_sql.POSTGRES_CREATE_TABLE_SCRAPER_DATA.format(table_name=DATA_TABLE_NAME),
-        my_sql.POSTGRES_CREATE_INDEXES_SCRAPER_DATA.format(table_name=DATA_TABLE_NAME),
-        my_sql.POSTGRES_CREATE_TABLE_SCRAPER_ERR.format(table_name=ERR_TABLE_NAME),
-        my_sql.POSTGRES_CREATE_INDEXES_SCRAPER_ERR.format(table_name=ERR_TABLE_NAME),
+        my_sql.POSTGRES_CREATE_TABLE_POSTS.format(table_name=DATA_TABLE_NAME),
+        my_sql.POSTGRES_CREATE_INDEXES_POSTS.format(table_name=DATA_TABLE_NAME),
+        my_sql.POSTGRES_CREATE_TABLE_SCRAPER_ERRORS.format(table_name=ERR_TABLE_NAME),
+        my_sql.POSTGRES_CREATE_INDEXES_SCRAPER_ERRORS.format(table_name=ERR_TABLE_NAME),
     ]
     try:
         for statement in ddl_statements:
@@ -60,12 +60,13 @@ def connect_ensure_tables():
 
 @dataclass
 class ScraperData:
-    post_id: str
-    source_id: str
-    task_id: str
-    post_blob: str
+    platform: str
+    url: str
+    text: str
+    is_classified: Optional[bool] = False
     id: Optional[int] = None
-    created_at: Optional[datetime] = None
+    post_id: Optional[str] = None
+    posted_at: Optional[datetime] = None
 
     def as_dict(self):
         return asdict(self)
@@ -73,11 +74,10 @@ class ScraperData:
 
 @dataclass
 class ScraperErrors:
-    source_id: str
-    task_id: str
+    platform: str
     message: str
     id: Optional[int] = None
-    created_at: Optional[datetime] = None
+    occurred_at: Optional[datetime] = None
 
     def as_dict(self):
         return asdict(self)

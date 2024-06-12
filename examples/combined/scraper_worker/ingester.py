@@ -93,18 +93,36 @@ def health_check():
 
 def process_success(task_id: str, timestamp: datetime, results: list[dict]):
     logger.info(f"Received results for {task_id} completed at {timestamp}: length={len(results)}")
-    rows = [
-        ScraperData(
-            post_id=result["id_str"],
-            source_id="twitter",
-            task_id=task_id,
-            post_blob=json.dumps(result),
-        )
-        for result in results
-    ]
+    
+    rows = []
+    if task_id == "twitter":    
+        rows = [
+            ScraperData(
+                post_id=result["id"],
+                platform="twitter",
+                url=result["url"],
+                text=result["text"],
+                posted_at=result["createdAt"]
+            )
+            for result in results
+        ]
+    elif task_id == "facebook":
+        rows = [
+            ScraperData(
+                platform="facebook",
+                url=result["url"],
+                text=result["text"],
+                posted_at=result["time"]
+            )
+            for result in results
+        ]
     persist_data(rows)
 
 
 def process_error(task_id: str, timestamp: datetime, message: str):
     logger.info(f"Received error for {task_id} completed at {timestamp}: {message}")
-    persist_error(ScraperErrors(source_id="twitter", task_id=task_id, message=message))
+    persist_error(
+        ScraperErrors(
+            platform=task_id,
+            message=message)
+        )

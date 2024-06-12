@@ -21,7 +21,7 @@ services:
       start_period: 2m
 
   redis:
-    image: redis
+    image: redis/redis-stack-server
     ports:
       - "6379:6379"
 
@@ -56,7 +56,8 @@ services:
       REDIS_CONNECTION_STRING: redis://redis:6379
       CELERY_BROKER: redis://redis-celery-broker:6380
       CELERY_BACKEND: redis://redis-celery-broker:6380
-      POSTS_DB_URI: postgres://postgres:postgres@database:5432/posts?sslmode=disable
+      POSTS_DB_URI: postgres://postgres:postgres@database:5432/main?sslmode=disable
+      SCRAPER_DB_URI: postgres://postgres:postgres@database:5432/main?sslmode=disable
     command: ["poetry", "run", "celery", "-A", "sandbox_worker.tasks", "worker", "-Q", "tasks", "--loglevel=info"]
 
   celery-scorer-worker0:
@@ -90,8 +91,9 @@ services:
     environment:
       CELERY_BROKER: redis://redis-celery-broker:6380
       CELERY_BACKEND: redis://redis-celery-broker:6380
-      SCRAPER_DB_URI: postgres://postgres:postgres@database:5432/scraper?sslmode=disable
+      SCRAPER_DB_URI: postgres://postgres:postgres@database:5432/main?sslmode=disable
       RESULTS_ENDPOINT: http://scraper-ingester:8002/data/scraper
+      APIFY_API_KEY: apify_api_1fNa155j5XibJ9tU9QaIR2tJiQ46XT2j4GfG
     command: ["poetry", "run", "celery", "-A", "scraper_worker.tasks", "worker", "-Q", "scraper", "--loglevel=info"]
 
   scraper-ingester:
@@ -104,7 +106,7 @@ services:
       - .:/app
       - ../../sample_data:/data
     environment:
-      SCRAPER_DB_URI: postgres://postgres:postgres@database:5432/scraper?sslmode=disable
+      SCRAPER_DB_URI: postgres://postgres:postgres@database:5432/main?sslmode=disable
       PYTHONPATH: /app/examples/combined
     command: ["poetry", "run", "uvicorn", "scraper_worker.ingester:app", "--host", "0.0.0.0", "--port", "8002"]
 

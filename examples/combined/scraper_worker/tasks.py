@@ -9,7 +9,7 @@ from apify_client import ApifyClient
 import csv
 
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Optional
 
 import requests
@@ -72,10 +72,13 @@ def process_error(task_id: str, message: str):
     return send_result(task_id, [], message)
 
 
-async def _apify_query(platform: str, limit: int = 10) -> list[dict]:
+async def _apify_query(platform: str) -> list[dict]:
     
     APIFY_API_KEY = os.getenv("APIFY_API_KEY")
     client = ApifyClient(APIFY_API_KEY)
+
+    yesterday = datetime.now() - timedelta(1)
+    yesterday = yesterday.strftime('%Y-%m-%d')
 
     results = []
 
@@ -83,7 +86,7 @@ async def _apify_query(platform: str, limit: int = 10) -> list[dict]:
 
         run_input = {
             "startUrls": [ { "url": src['FB_URL'] } for src in sources if src['FB_URL'] ],
-            "resultsLimit": 100,
+            "resultsLimit": 1,
         }
         
         run = client.actor("KoJrdxJCTtpon81KY").call(run_input=run_input)
@@ -92,9 +95,20 @@ async def _apify_query(platform: str, limit: int = 10) -> list[dict]:
             fields="url,time,text"
         ).items
     
-    # elif platform == 'twitter':
+    elif platform == 'twitter':
     
-    #     ...
+        run_input = {
+            "twitterHandles": [ src['TW_HANDLE'] for src in sources if src['TW_HANDLE'] ],
+            "tweetLanguage": "en",
+            "start": yesterday,
+            "maxTweetsPerQuery": 1,
+        }
+        
+        run = client.actor("61RPP7dywgiy0JPD0").call(run_input=run_input)
+        
+        results = client.dataset(run["defaultDatasetId"]).list_items(
+            fields="type,id,url,text,createdAt"
+        ).items
     
     # elif platform == 'reddit':
     
@@ -107,17 +121,16 @@ async def _apify_query(platform: str, limit: int = 10) -> list[dict]:
 # TASKS
 
 @app.task(bind=True)
-def apify_query(self, platform: str, limit: int = 10) -> None:
+def apify_query(self, platform: str) -> None:
     """Regular query of Apify APIs.
 
     Args:
         platform (str): which platform to scrape.
-        limit (int): number of results to return.
     """
 
     task_id = self.request.id
     try:
-        results = asyncio.run(_apify_query(platform, limit))
+        results = asyncio.run(_apify_query(platform))
         process_success(task_id, results)
     except Exception as e:
         process_error(task_id, str(e))
@@ -138,10 +151,10 @@ def setup_periodic_tasks(sender, **kwargs):
             "function": apify_query,
             "args": ["facebook"],
         },
-        "reddit": {
-            "function": apify_query,
-            "args": ["reddit"],
-        },
+        # "reddit": {
+        #     "function": apify_query,
+        #     "args": ["reddit"],
+        # },
     }
     scheduled_tasks = [
         ScheduledTask(

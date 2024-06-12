@@ -39,7 +39,6 @@ import random
 import time
 from typing import Any
 
-from nltk.sentiment import SentimentIntensityAnalyzer
 from pydantic import BaseModel, Field
 
 from scorer_worker.celery_app import app
@@ -126,17 +125,17 @@ def random_scorer(self, **kwargs) -> dict[str, Any]:
 
 
 def do_sentiment_scoring(input: SentimentScoreInput) -> SentimentScoreOutput:
-    sia = SentimentIntensityAnalyzer()
-    score = sia.polarity_scores(input.text)
     return SentimentScoreOutput(
         item_id=input.item_id,
-        score=score.get("compound", 0),
+        score=0.5,
     )
 
 
 @app.task(bind=True, time_limit=KILL_DEADLINE_SECONDS, soft_time_limit=TIME_LIMIT_SECONDS)
 def sentiment_scorer(self, **kwargs) -> dict[str, Any]:
     """Use NLTK to perform sentiment scoring
+
+    Note from Luke: removed NLTK dependency from poetry so have removed it from the example here.
 
     Args:
         **kwargs: Arbitrary keyword arguments. These should be convertible to SentimentScoreInput,
