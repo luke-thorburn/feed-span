@@ -84,7 +84,7 @@ if __name__ == "__main__":
     text = "We better save our own interests and ignore the rest of the world because we are the absolute best in the world!!"
     print(getBridgeScore(text))
 
-    tweets = pd.read_csv("/Users/sohamde/desktop/prosocial-ranking-local/new_bridging_tweets.csv")
+    tweets = pd.read_csv("/Users/sohamde/desktop/prosocial-ranking-local/old/new_bridging_tweets.csv")
     tweets = list(tweets.sample(1000, random_state=1)['clean_tweet'])
     print(len(tweets))
 

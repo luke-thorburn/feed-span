@@ -9,6 +9,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from ranking_challenge.request import RankingRequest
 from ranking_challenge.response import RankingResponse
 from scorer_worker.scorer_basic import compute_scores as compute_scores_basic
+from classifiers import areCivic
+import random
+
 
 logging.basicConfig(
     level=logging.INFO,
@@ -46,38 +49,51 @@ def redis_client():
     return memoized_redis_client
 
 
-# Straw-man fake hypothesis for why this ranker example is worthwhile:
-# Paying too much attention to popular things or people makes a user sad.
-# So let's identify the popular named entities in the user's feeds and
-# down-rank anything with text that contains them. Then maybe they
-# will be less sad.
 @app.post("/rank")
 def rank(ranking_request: RankingRequest) -> RankingResponse:
     logger.info("Received ranking request")
-    ranked_results = []
-    # get the named entities from redis
-    result_key = "my_worker:scheduled:top_named_entities"
+    ranked_ids = []
 
-    top_entities = []
+    result_key = "my_worker:db:SCRAPED_POSTS" # gets all posts from redis
+    replacement_candidates = []
     cached_results = redis_client().get(result_key)
     if cached_results is not None:
-        top_entities_record = json.loads(cached_results.decode("utf-8"))
-        top_entities = set(x[0] for x in top_entities_record["top_named_entities"])
+        all_scraped_posts = json.loads(cached_results.decode("utf-8"))
+        # sort in descending order of time
+    
+    replacement_candidates = [ranking_request.session.user_id not in x['recommended_to'] for x in all_scraped_posts]
+    request_posts = [x.text for x in ranking_request.items]
+    request_ids = [x.id for x in ranking_request.items]
+    civic_posts_boolean_map = areCivic[request_posts] # boolean map
+    civic_post_ids = [id for id, flag in zip(request_ids, civic_posts_boolean_map) if flag]
+
+    inserted_posts = 0
 
     for item in ranking_request.items:
-        score = -1 if any(ne in item.text for ne in top_entities) else 1
-        ranked_results.append({"id": item.id, "score": score})
+        if item.id in civic_post_ids:
+            # replace with bridging post
+            if 12345678 not in request_ids: # deduplication
+                ranked_ids.append(12345678) # 12345678 is a dummy item.id from replacement_candidates
+                # add ranking_request.session.user_id to item.recommended_to
+                inserted_posts += 1
+                
+        else:
+            ranked_ids.append(item.id)
 
-    ranked_results.sort(key=lambda x: x["score"], reverse=True)
+        # insertion
+        if inserted_posts < int(0.1 * len(request_ids)): # less than 10% dose size
+            # insert more
+            diff = int(0.1 * len(request_ids)) - inserted_posts
+            for num in range(diff):
+                if 12345678 not in request_ids: # deduplication
+                    ranked_ids.append(12345678) # 12345678 is a dummy item.id from replacement_candidates
+                    # add ranking_request.session.user_id to item.recommended_to
 
-    ranked_ids = [content["id"] for content in ranked_results]
+    result = {"ranked_ids": ranked_ids,}
 
-    result = {
-        "ranked_ids": ranked_ids,
-    }
     with ThreadPoolExecutor() as executor:
         data = [{"item_id": x.id, "text": x.text} for x in ranking_request.items]
-        future = executor.submit(compute_scores_basic, "scorer_worker.tasks.sentiment_scorer", data)
+        future = executor.submit(compute_scores_basic, "scorer_worker.tasks.civic_labeller", data)
         try:
             # logger.info("Submitting score computation task")
             scoring_result = future.result(timeout=0.5)
