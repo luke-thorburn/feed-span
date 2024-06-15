@@ -2,4 +2,4 @@ examples/combined/ranking_server/v4/
 examples/combined/ranking_server/fine_tuned_polibert_unfreeze_1/
 examples/combined/sandbox_worker/v4/
 examples/combined/sandbox_worker/fine_tuned_polibert_unfreeze_1/
-*/__pycache__/*
+**/__pycache__
