@@ -78,12 +78,18 @@ You can also just build a single component and run it.
 Download the saved models from this [Google Drive folder](https://drive.google.com/drive/folders/1vGKXNIxqbAoQjZdHnVs_oHFuLsb7Ykhm?usp=sharing)
 Then, copy both models in the parent directory containing the classifiers, i.e `examples/combined/ranking_server` 
 
+### Clearing Space
 
-### How to inspect databases
+I find that my laptop gradually fills up when repeatedly building all these docker images and volumes. To clear space, run:
+
+1. `sudo docker systemctl prune -a`
+2. `sudo docker volume prune -a`
+
+## How to inspect databases
 
 These commands are for Linux. Run while all the components are running (e.g., after `sudo make run`).
 
-#### Postgres
+### Postgres
 
 1. `sudo docker exec -it feed-span-database-1 bash`
 2. `psql -U postgres -d main`
@@ -92,17 +98,10 @@ These commands are for Linux. Run while all the components are running (e.g., af
     - `\d table_name` to list columns
     - Or any SQL query.
 
-#### Redis
+### Redis
 
 1. `sudo docker exec -it feed-span-redis-1 bash`
 2. `redis-cli`
 3. Then explore the database using the redit query language. E.g.,
     - `KEYS *` to get a list of keys
     - `JSON.GET key` to inspect a key of type json.
-
-### Clearing Space
-
-I find that my laptop gradually fills up when repeatedly building all these docker images and volumes. To clear space, run:
-
-1. `sudo docker systemctl prune -a`
-2. `sudo docker volume prune -a`
