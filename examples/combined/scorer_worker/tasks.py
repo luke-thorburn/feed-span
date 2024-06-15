@@ -65,20 +65,6 @@ class BridgeScoreInput(BaseModel):
     item_id: str = Field(description="The ID of the item to score")
     text: str = Field(description="The body of the post for scoring")
 
-class SentimentScoreInput(BaseModel):
-    item_id: str = Field(description="The ID of the item to score")
-    text: str = Field(description="The body of the post for scoring")
-
-
-class RandomScoreInput(BaseModel):
-    item_id: str = Field(description="The ID of the item to score")
-    text: str = Field(description="The body of the post for scoring")
-    mean: float = Field(description="Mean of the random score", default=0.5)
-    sdev: float = Field(description="Standard deviation of the radom score", default=0.1)
-    sleep: float | None = Field(description="Sleep time for testing", default=None)
-    raise_exception: bool = Field(description="Raise an exception for testing", default=False)
-
-
 class ScoreOutput(BaseModel):
     item_id: str = Field(description="The ID of the item to score")
     score: float = Field(description="Numerical score")
@@ -86,92 +72,14 @@ class ScoreOutput(BaseModel):
     t_end: float = Field(description="End time (seconds)", default=0)
 
 
-class SentimentScoreOutput(ScoreOutput):
-    pass
-
 class BridgeScoreOutput(ScoreOutput):
     pass
-
 
 class CivicLabelOutput(ScoreOutput):
     pass
 
-class RandomScoreOutput(ScoreOutput):
-    pass
-
-
 class TimeoutException(Exception):
     pass
-
-
-def do_random_scoring(input: RandomScoreInput) -> RandomScoreOutput:
-    if input.sleep:
-        time.sleep(input.sleep)
-    if input.raise_exception:
-        raise ValueError("Random exception")
-    return RandomScoreOutput(
-        item_id=input.item_id,
-        score=random.normalvariate(input.mean, input.sdev),
-    )
-
-
-@app.task(bind=True, time_limit=KILL_DEADLINE_SECONDS, soft_time_limit=TIME_LIMIT_SECONDS)
-def random_scorer(self, **kwargs) -> dict[str, Any]:
-    """Output random score
-
-    Args:
-        **kwargs: Arbitrary keyword arguments. These should be convertible to RandomScoreInput.
-                  Fields `sleep` and `raise_exception` can be used for load and failure testing.
-
-    Returns:
-        dict[str, Any]: The result of the sentiment scoring task. The result is a dictionary
-                        representation of RandomScoreOutput
-
-    The results are stored in the Celery result backend.
-    """
-    start = time.time()
-    task_id = self.request.id
-    worker_id = self.request.hostname
-    logger.info(f"Task {task_id} started by {worker_id}")
-    input = RandomScoreInput(**kwargs)
-    result = do_random_scoring(input)
-    result.t_start = start
-    result.t_end = time.time()
-    return result.model_dump()
-
-
-def do_sentiment_scoring(input: SentimentScoreInput) -> SentimentScoreOutput:
-    return SentimentScoreOutput(
-        item_id=input.item_id,
-        score=0.5,
-    )
-
-
-@app.task(bind=True, time_limit=KILL_DEADLINE_SECONDS, soft_time_limit=TIME_LIMIT_SECONDS)
-def sentiment_scorer(self, **kwargs) -> dict[str, Any]:
-    """Use NLTK to perform sentiment scoring
-
-    Note from Luke: removed NLTK dependency from poetry so have removed it from the example here.
-
-    Args:
-        **kwargs: Arbitrary keyword arguments. These should be convertible to SentimentScoreInput,
-                  thus the input should contain `item_id` and `text`
-
-    Returns:
-        dict[str, Any]: The result of the sentiment scoring task. The result is a dictionary
-                        representation of SentimentScoreOutput
-
-    The results are stored in the Celery result backend.
-    """
-    start = time.time()
-    task_id = self.request.id
-    worker_id = self.request.hostname
-    logger.info(f"Task {task_id} started by {worker_id}")
-    input = SentimentScoreInput(**kwargs)
-    result = do_sentiment_scoring(input)
-    result.t_start = start
-    result.t_end = time.time()
-    return result.model_dump()
 
 
 def do_civic_labelling(input: CivicLabelInput) -> CivicLabelOutput:
