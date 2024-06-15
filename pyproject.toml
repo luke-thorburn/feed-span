@@ -58,6 +58,9 @@ blog = "https://rankingchallenge.substack.com/"
 [tool.poetry.scripts]
 rcfaker = "ranking_challenge.fake:main"
 
+[tool.poetry.group.dev.dependencies]
+ipykernel = "^6.29.4"
+
 [tool.ruff]
 line-length = 100
 
