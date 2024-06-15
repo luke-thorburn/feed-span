@@ -1,4 +1,4 @@
-**Note** — the main project files for each of the components are located in `examples/combined`. This directory structure is a relic of starting from the template code which we can fix at some point.
+**Note** — the main project files for each of the components are located in `components`. This directory structure is a relic of starting from the template code which we can fix at some point.
 
 **Helpful Docs** — [Poetry](https://python-poetry.org/docs/basic-usage/),  [Celery](https://docs.celeryq.dev/en/stable/)
 
@@ -18,7 +18,7 @@ These variables are specified in `docker-compose.yml`. Copied here for reference
 
 ### Environment Variables
 
-    PYTHONPATH: /app/examples/combined
+    PYTHONPATH: /app/components
 
     CELERY_BACKEND: redis://redis-celery-broker:6380
     CELERY_BROKER: redis://redis-celery-broker:6380
@@ -76,7 +76,7 @@ You can also just build a single component and run it.
 ### Note on classifiers
 
 Download the saved models from this [Google Drive folder](https://drive.google.com/drive/folders/1vGKXNIxqbAoQjZdHnVs_oHFuLsb7Ykhm?usp=sharing)
-Then, copy both models in the parent directory containing the classifiers, i.e `examples/combined/ranking_server` 
+Then, copy both models in the parent directory containing the classifiers, i.e `components/ranking_server` 
 
 ### Clearing Space
 

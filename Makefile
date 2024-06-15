@@ -18,11 +18,11 @@ run:
 
 test:
 	$(DOCKER_COMPOSE) up -d database redis-celery-broker redis
-	poetry run pytest examples/combined/sandbox_worker/*_test.py
-	poetry run pytest examples/combined/scorer_worker/*_test.py
+	poetry run pytest components/sandbox_worker/*_test.py
+	poetry run pytest components/scorer_worker/*_test.py
 	$(DOCKER_COMPOSE) down
 
 ci:
 	$(DOCKER_COMPOSE) up -d database
-	./examples/combined/ci.sh
+	./components/ci.sh
 	$(DOCKER_COMPOSE) down

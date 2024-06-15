@@ -4,8 +4,6 @@ WORKDIR /app
 
 # Install Poetry
 RUN pip install poetry
-RUN pip install torch
-RUN pip install transformers
 
 # Copy only the necessary files to install dependencies with Poetry
 COPY pyproject.toml poetry.lock ./
@@ -14,7 +12,7 @@ COPY pyproject.toml poetry.lock ./
 RUN poetry config virtualenvs.create false && poetry install --only main --no-interaction --no-ansi
 
 # Copy the rest of the application code
-COPY examples/combined /app
+COPY components /app
 
 # Expose the port the app runs on
 EXPOSE 8001

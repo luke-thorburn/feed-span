@@ -107,7 +107,7 @@ services:
       - ../../sample_data:/data
     environment:
       SCRAPER_DB_URI: postgres://postgres:postgres@feed-span-database-1:5432/main?sslmode=disable
-      PYTHONPATH: /app/examples/combined
+      PYTHONPATH: /app/components
     command: ["poetry", "run", "uvicorn", "scraper_worker.ingester:app", "--host", "0.0.0.0", "--port", "8002"]
 
   job-scheduler:

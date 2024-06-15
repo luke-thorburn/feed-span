@@ -12,7 +12,7 @@ COPY pyproject.toml poetry.lock ./
 RUN poetry config virtualenvs.create false && poetry install --only main --no-interaction --no-ansi
 
 # Copy app files.
-COPY examples/combined /app
+COPY components /app
 
 # Copy scraping sources.
-COPY examples/combined/scraper_worker/sources.csv /app
+COPY components/scraper_worker/sources.csv /app

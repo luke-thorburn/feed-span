@@ -33,6 +33,9 @@ sqlalchemy = "*"
 celery-redbeat = "*"
 pandas = "^1.4.2"
 apify-client = "^1.7.0"
+torch = "^2.3.1"
+transformers = "^4.41.2"
+
 
 [tool.poetry.dev-dependencies]
 pip-tools = "*"
@@ -42,13 +45,11 @@ pre-commit = "^3.7.1"
 fakeredis = "*"
 
 [tool.poetry.extras]
-module = ["pytest", "pydantic", "faker"]
-sample_data = ["pandas", "numpy"]
-examples_combined_ranking_server = ["celery", "uvicorn", "ranking-challenge", "redis", "pytest"]
-examples_combined_scorer_worker = ["pydantic", "celery", "fastapi", "redis", "pytest", "pandas", "uvicorn"]
-examples_combined = ["celery", "redis", "pytest", "pandas", "uvicorn", "ranking-challenge", "psycopg2-binary"]
-examples_combined_job_scheduler = ["celery", "celery-redbeat"]
-examples_combined_sandbox_worker = ["celery", "redis", "pytest", "pandas", "psycopg2", "celery-redbeat", "sqlalchemy", "psycopg2-binary"]
+feed_span_ranking_server = ["celery", "uvicorn", "ranking-challenge", "redis", "pytest", "torch", "transformers"]
+feed_span_scorer_worker = ["pydantic", "celery", "fastapi", "redis", "pytest", "pandas", "uvicorn", "torch", "transformers"]
+feed_span = ["celery", "redis", "pytest", "pandas", "uvicorn", "ranking-challenge", "psycopg2-binary"]
+feed_span_job_scheduler = ["celery", "celery-redbeat"]
+feed_span_sandbox_worker = ["celery", "redis", "pytest", "pandas", "psycopg2", "celery-redbeat", "sqlalchemy", "psycopg2-binary"]
 
 [tool.poetry.urls]
 homepage = "https://humancompatible.ai/news/2024/01/18/the-prosocial-ranking-challenge-60000-in-prizes-for-better-social-media-algorithms/"
