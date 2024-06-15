@@ -4,6 +4,8 @@ WORKDIR /app
 
 # Install Poetry
 RUN pip install poetry
+RUN pip install torch
+RUN pip install transformers
 
 # Copy only the necessary files to install dependencies with Poetry
 COPY pyproject.toml poetry.lock ./

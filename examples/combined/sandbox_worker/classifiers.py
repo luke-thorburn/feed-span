@@ -73,33 +73,5 @@ def isCivic(text):
     else:
         return False
 
-if __name__ == "__main__":
-
-    text = "This is a sample text for prediction."
-    print(getBridgeScore(text))
-
-    text = "Everyone lived happily every after"
-    print(getBridgeScore(text))
-
-    text = "We better save our own interests and ignore the rest of the world because we are the absolute best in the world!!"
-    print(getBridgeScore(text))
-
-    tweets = pd.read_csv("/Users/sohamde/desktop/prosocial-ranking-local/new_bridging_tweets.csv")
-    tweets = list(tweets.sample(1000, random_state=1)['clean_tweet'])
-    print(len(tweets))
-
-    start = time.time()
-
-    for tweet in tweets:
-        label = isCivic(tweet)
-
-    t = time.time() - start
-    print(t)
-
-    start = time.time()
-    labels = areCivic(tweets)
-    t = time.time() - start
-    print(t)
-
 
 

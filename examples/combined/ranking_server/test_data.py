@@ -36,7 +36,7 @@ BASIC_EXAMPLE = {
             "id": "should-rank-high-2",
             "post_id": "de83fc78-d648-444e-b20d-853bf05e4f0e",
             "parent_id": "s5ad13266-8abk4-5219-kre5-2811022l7e43dv",
-            "text": "this thing is ok.",
+            "text": "The election results are about to be declared. The new president (POTUS) is going to be amazing for the country!",
             "author_name_hash": "60b46b7370f80735a06b7aa8c4eb6bd588440816b086d5ef7355cf202a118305",
             "embedded_urls": [],
             "type": "comment",
