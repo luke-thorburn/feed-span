@@ -40,7 +40,7 @@ import time
 from typing import Any
 
 from pydantic import BaseModel, Field
-from classifiers import areCivic, getBridgeScore
+from ranking_server.classifiers import areCivic, getBridgeScore
 
 
 from scorer_worker.celery_app import app
@@ -53,8 +53,8 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-KILL_DEADLINE_SECONDS = 5
-TIME_LIMIT_SECONDS = 4
+KILL_DEADLINE_SECONDS = 10
+TIME_LIMIT_SECONDS = 10
 
 
 class CivicLabelInput(BaseModel):
@@ -175,7 +175,7 @@ def sentiment_scorer(self, **kwargs) -> dict[str, Any]:
 
 
 def do_civic_labelling(input: CivicLabelInput) -> CivicLabelOutput:
-    label = areCivic[input.text]
+    label = areCivic(input.text)
     return CivicLabelOutput(
         item_id=input.item_id,
         score=label[0],
@@ -208,7 +208,7 @@ def civic_labeller(self, **kwargs) -> dict[str, Any]:
 
 
 def do_bridge_scoring(input: BridgeScoreInput) -> BridgeScoreOutput:
-    label = getBridgeScore[input.text]
+    label = getBridgeScore(input.text)
     return BridgeScoreOutput(
         item_id=input.item_id,
         score=label[0],
