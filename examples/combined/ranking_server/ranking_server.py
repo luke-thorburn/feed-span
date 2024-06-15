@@ -61,19 +61,26 @@ def rank(ranking_request: RankingRequest) -> RankingResponse:
 
     conn = psycopg2.connect(DB_URI)  
     cur = conn.cursor()  
-    cur.execute("SELECT post_id FROM posts")  
+    cur.execute("SELECT post_id,url FROM posts")  
     rows = cur.fetchall()  
-    post_ids = []  
+    post_ids = []
+    urls = []  
       
     for row in rows:
-        post_id = row[0]  
-        # Only append the id to the list if it's not None  
+        post_id = row[0]
+        url = row[1]  
         if post_id is not None:  
             post_ids.append(post_id)
+            urls.append(url)
     cur.close()  
     conn.close()  
 
-    replacement_candidates = post_ids # TODO: check recommended_to
+    print(post_ids)
+    print(urls)
+
+    inserted_posts = []
+
+    replacement_candidates = post_ids # TODO: check recommended_to, chronological sorting
     request_posts = [x.text for x in ranking_request.items]
     request_ids = [x.id for x in ranking_request.items]
     civic_posts_boolean_map = areCivic(request_posts) # boolean map
@@ -88,7 +95,8 @@ def rank(ranking_request: RankingRequest) -> RankingResponse:
             # replace with bridging post
             curr_candidate = replacement_candidates[counter]
             if curr_candidate not in request_ids: # deduplication
-                ranked_ids.append(curr_candidate) # 12345678 is a dummy item.id from replacement_candidates
+                ranked_ids.append(curr_candidate) 
+                inserted_posts.append({"id": replacement_candidates[counter], "url": urls[counter]})
                 # add ranking_request.session.user_id to item.recommended_to
                 counter += 1
                 
@@ -102,24 +110,25 @@ def rank(ranking_request: RankingRequest) -> RankingResponse:
             for num in range(diff):
                 curr_candidate = replacement_candidates[counter]
                 if curr_candidate not in request_ids: # deduplication
-                    ranked_ids.append(curr_candidate) # 12345678 is a dummy item.id from replacement_candidates
+                    ranked_ids.append(curr_candidate)
+                    inserted_posts.append({"id": replacement_candidates[counter], "url": urls[counter]})
                     counter += 1
                     # add ranking_request.session.user_id to item.recommended_to
 
-    result = {"ranked_ids": ranked_ids,}
+    result = {"ranked_ids": ranked_ids, "new_items": inserted_posts}
     print(result)
 
-    with ThreadPoolExecutor() as executor:
-        data = [{"item_id": x.id, "text": x.text} for x in ranking_request.items]
-        future = executor.submit(compute_scores_basic, "scorer_worker.tasks.civic_labeller", data)
-        try:
-            # logger.info("Submitting score computation task")
-            scoring_result = future.result(timeout=0.5)
-        except TimeoutError:
-            logger.error("Timed out waiting for score results")
-        except Exception as e:
-            logger.error(f"Error computing scores: {e}")
-        else:
-            logger.info(f"Computed scores: {scoring_result}")
+    #with ThreadPoolExecutor() as executor:
+    #    data = [{"item_id": x.id, "text": x.text} for x in ranking_request.items]
+    #    future = executor.submit(compute_scores_basic, "scorer_worker.tasks.civic_labeller", data)
+    #    try:
+    #        # logger.info("Submitting score computation task")
+    #        scoring_result = future.result(timeout=0.5)
+    #    except TimeoutError:
+    #        logger.error("Timed out waiting for score results")
+    #    except Exception as e:
+    #        logger.error(f"Error computing scores: {e}")
+    #    else:
+    #        logger.info(f"Computed scores: {scoring_result}")
 
     return RankingResponse(**result)
