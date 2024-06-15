@@ -59,26 +59,21 @@ def rank(ranking_request: RankingRequest) -> RankingResponse:
     logger.info("Received ranking request")
     ranked_ids = []
 
-    # =====
-
     conn = psycopg2.connect(DB_URI)  
     cur = conn.cursor()  
     cur.execute("SELECT post_id FROM posts")  
     rows = cur.fetchall()  
-    print(rows)
+    post_ids = []  
+      
+    for row in rows:
+        post_id = row[0]  
+        # Only append the id to the list if it's not None  
+        if post_id is not None:  
+            post_ids.append(post_id)
     cur.close()  
     conn.close()  
 
-    # =======  
-
-    result_key = "my_worker:db:SCRAPED_POSTS" # gets all posts from redis
-    replacement_candidates = []
-    cached_results = redis_client().get(result_key)
-    if cached_results is not None:
-        all_scraped_posts = json.loads(cached_results.decode("utf-8"))
-        # sort in descending order of time
-    
-    #replacement_candidates = [ranking_request.session.user_id not in x['recommended_to'] for x in all_scraped_posts]
+    replacement_candidates = post_ids # TODO: check recommended_to
     request_posts = [x.text for x in ranking_request.items]
     request_ids = [x.id for x in ranking_request.items]
     civic_posts_boolean_map = areCivic(request_posts) # boolean map
@@ -86,26 +81,29 @@ def rank(ranking_request: RankingRequest) -> RankingResponse:
     print(civic_posts_boolean_map)
     civic_post_ids = [id for id, flag in zip(request_ids, civic_posts_boolean_map) if flag]
 
-    inserted_posts = 0
+    counter = 0 
 
     for item in ranking_request.items:
         if item.id in civic_post_ids:
             # replace with bridging post
-            if 12345678 not in request_ids: # deduplication
-                ranked_ids.append("12345678") # 12345678 is a dummy item.id from replacement_candidates
+            curr_candidate = replacement_candidates[counter]
+            if curr_candidate not in request_ids: # deduplication
+                ranked_ids.append(curr_candidate) # 12345678 is a dummy item.id from replacement_candidates
                 # add ranking_request.session.user_id to item.recommended_to
-                inserted_posts += 1
+                counter += 1
                 
         else:
             ranked_ids.append(item.id)
 
         # insertion
-        if inserted_posts < int(0.1 * len(request_ids)): # less than 10% dose size
+        if counter < int(0.1 * len(request_ids)): # less than 10% dose size
             # insert more
-            diff = int(0.1 * len(request_ids)) - inserted_posts
+            diff = int(0.1 * len(request_ids)) - counter
             for num in range(diff):
-                if 12345678 not in request_ids: # deduplication
-                    ranked_ids.append("12345678") # 12345678 is a dummy item.id from replacement_candidates
+                curr_candidate = replacement_candidates[counter]
+                if curr_candidate not in request_ids: # deduplication
+                    ranked_ids.append(curr_candidate) # 12345678 is a dummy item.id from replacement_candidates
+                    counter += 1
                     # add ranking_request.session.user_id to item.recommended_to
 
     result = {"ranked_ids": ranked_ids,}
