@@ -1,21 +1,24 @@
-import json
+
+# ------------------------------------------------------------------------------
+# IMPORTS
+
 import logging
 import os
-from concurrent.futures.thread import ThreadPoolExecutor
-import ranking_server.test_data
-
+import json
+# from concurrent.futures.thread import ThreadPoolExecutor
+# import ranking_server.test_data
 
 import redis
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
+# from fastapi.middleware.cors import CORSMiddleware
 from ranking_challenge.request import RankingRequest
 from ranking_challenge.response import RankingResponse
-from scorer_worker.scorer_basic import compute_scores as compute_scores_basic
+# from scorer_worker.scorer_basic import compute_scores as compute_scores_basic
 from ranking_server.classifiers import areCivic
-import random
-import psycopg2  
 
 
+# ------------------------------------------------------------------------------
+# SETUP
 
 logging.basicConfig(
     level=logging.INFO,
@@ -25,24 +28,23 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 logger.info("Starting up")
 
-DB_URI = "postgres://postgres:postgres@feed-span-database-1:5432/main?sslmode=disable"
 REDIS_DB = f"{os.getenv('REDIS_CONNECTION_STRING', 'redis://database:6379')}/0"
 
 app = FastAPI(
-    title="Prosocial Ranking Challenge combined example",
-    description="Ranks input based on how unpopular the things and people in it are.",
-    version="0.1.0",
+    title="feed-span",
+    description="Entry for the Prosocial Ranking Challenge.",
+    version="1.0.0",
 )
 
 # Set up CORS. This is necessary if calling this code directly from a
 # browser extension, but if you're not doing that, you won't need this.
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=False,
-    allow_methods=["HEAD", "OPTIONS", "GET", "POST"],
-    allow_headers=["*"],
-)
+# app.add_middleware(
+#     CORSMiddleware,
+#     allow_origins=["*"],
+#     allow_credentials=False,
+#     allow_methods=["HEAD", "OPTIONS", "GET", "POST"],
+#     allow_headers=["*"],
+# )
 
 memoized_redis_client = None
 
@@ -54,69 +56,95 @@ def redis_client():
     return memoized_redis_client
 
 
+# ------------------------------------------------------------------------------
+# RANKER
+
 @app.post("/rank")
 def rank(ranking_request: RankingRequest) -> RankingResponse:
+
     logger.info("Received ranking request")
+    
+    # Extract request parameters.
+    
+    items = ranking_request.items
+    session = ranking_request.session
+
+    # Run civic classifier.
+
+    items_text = [item.text for item in items]
+    items_civic_status = areCivic(items_text)
+
+    # Fetch bridging posts from Redis.
+    # (that have not already been recommended to user)
+
+    result = redis_client().execute_command(
+        'JSON.GET', # Redis command
+        f"posts_{session.platform}", # Redis key
+        f"$[?(@.recommended_to[*] != {session.user_id})]" # JSONPath filters
+    )
+    replacement_candidates = json.loads(result) if result else []
+
+    # TODO: Figure out how to trade off recency with bridgingness. For now, just
+    #       assume all posts in redis are sufficiently recent.
+
+
+    # Sort them from most to least bridging.
+
+    replacement_candidates = sorted(
+        replacement_candidates,
+        key=lambda x: x['bridging_score'],
+        reverse = True
+    )
+    
+    # Replace civic posts with bridging (civic) posts.
+
+    item_ids = [item.id for item in items]
+    civic_post_ids = [id for id, is_civic in zip(item_ids, items_civic_status) if is_civic]
+
+    counter = 0
     ranked_ids = []
-
-    conn = psycopg2.connect(DB_URI)  
-    cur = conn.cursor()  
-    cur.execute("SELECT post_id,url FROM posts")  
-    rows = cur.fetchall()  
-    post_ids = []
-    urls = []  
-      
-    for row in rows:
-        post_id = row[0]
-        url = row[1]  
-        if post_id is not None:  
-            post_ids.append(post_id)
-            urls.append(url)
-    cur.close()  
-    conn.close()  
-
-    print(post_ids)
-    print(urls)
-
     inserted_posts = []
 
-    replacement_candidates = post_ids # TODO: check recommended_to, chronological sorting
-    request_posts = [x.text for x in ranking_request.items]
-    request_ids = [x.id for x in ranking_request.items]
-    civic_posts_boolean_map = areCivic(request_posts) # boolean map
-    print(request_posts)
-    print(civic_posts_boolean_map)
-    civic_post_ids = [id for id, flag in zip(request_ids, civic_posts_boolean_map) if flag]
+    for id in item_ids:
+        if id in civic_post_ids:
+            candidate = replacement_candidates.pop(0)
+            if candidate['id'] not in item_ids: # deduplication
+                ranked_ids.append(candidate['id'])
+                inserted_posts.append({
+                    "id": candidate['id'],
+                    "url": candidate['url']
+                })
+                counter += 1
+            else:
+                ranked_ids.append(id)
+        else:
+            ranked_ids.append(id)
 
-    counter = 0 
 
-    for item in ranking_request.items:
-        if item.id in civic_post_ids:
-            # replace with bridging post
-            curr_candidate = replacement_candidates[counter]
-            if curr_candidate not in request_ids: # deduplication
-                ranked_ids.append(curr_candidate) 
-                inserted_posts.append({"id": replacement_candidates[counter], "url": urls[counter]})
-                # add ranking_request.session.user_id to item.recommended_to
+
+    # If proportion of civic content less than a threshold, insert additional
+    # bridging posts.
+    
+    if counter < int(0.1 * len(item_ids)): # less than 10% dose size
+        # insert more
+        diff = int(0.1 * len(item_ids)) - counter
+        for num in range(diff):
+            candidate = replacement_candidates.pop(0)
+            if candidate['id'] not in ranked_ids: # deduplication
+                ranked_ids.append(candidate['id'])
+                inserted_posts.append({
+                    "id": candidate['id'],
+                    "url": candidate['url']
+                })
                 counter += 1
                 
-        else:
-            ranked_ids.append(item.id)
+    
+    # TODO: Add ranking_request.session.user_id to item.recommended_to for all the relevant posts.              
+    # TODO: Account for the possibility of running out of bridging posts.
+    # TODO: Logging.
+    # TODO: Diversity pass.
 
-        # insertion
-        if counter < int(0.1 * len(request_ids)): # less than 10% dose size
-            # insert more
-            diff = int(0.1 * len(request_ids)) - counter
-            for num in range(diff):
-                curr_candidate = replacement_candidates[counter]
-                if curr_candidate not in request_ids: # deduplication
-                    ranked_ids.append(curr_candidate)
-                    inserted_posts.append({"id": replacement_candidates[counter], "url": urls[counter]})
-                    counter += 1
-                    # add ranking_request.session.user_id to item.recommended_to
 
-    result = {"ranked_ids": ranked_ids, "new_items": inserted_posts}
-    print(result)
 
     #with ThreadPoolExecutor() as executor:
     #    data = [{"item_id": x.id, "text": x.text} for x in ranking_request.items]
@@ -130,5 +158,11 @@ def rank(ranking_request: RankingRequest) -> RankingResponse:
     #        logger.error(f"Error computing scores: {e}")
     #    else:
     #        logger.info(f"Computed scores: {scoring_result}")
+    
+
+    result = {
+        "ranked_ids": ranked_ids,
+        "new_items": inserted_posts
+    }
 
     return RankingResponse(**result)

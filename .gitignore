@@ -1,5 +1,3 @@
-components/ranking_server/v4/
-components/ranking_server/fine_tuned_polibert_unfreeze_1/
-components/sandbox_worker/v4/
-components/sandbox_worker/fine_tuned_polibert_unfreeze_1/
+**/model_civic/
+**/model_bridging/
 **/__pycache__

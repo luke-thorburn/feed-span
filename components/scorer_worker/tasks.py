@@ -34,116 +34,116 @@ Models:
     SentimentScoreOutput
 """
 
-import logging
-import random
-import time
-from typing import Any
+# import logging
+# import random
+# import time
+# from typing import Any
 
-from pydantic import BaseModel, Field
-from ranking_server.classifiers import areCivic, getBridgeScore
-
-
-from scorer_worker.celery_app import app
-
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S",
-)
-logger = logging.getLogger(__name__)
+# from pydantic import BaseModel, Field
+# from ranking_server.classifiers import areCivic, getBridgeScore
 
 
-KILL_DEADLINE_SECONDS = 10
-TIME_LIMIT_SECONDS = 10
+# from scorer_worker.celery_app import app
+
+# logging.basicConfig(
+#     level=logging.INFO,
+#     format="%(asctime)s [%(levelname)s] %(message)s",
+#     datefmt="%Y-%m-%d %H:%M:%S",
+# )
+# logger = logging.getLogger(__name__)
 
 
-class CivicLabelInput(BaseModel):
-    item_id: str = Field(description="The ID of the item to label")
-    text: str = Field(description="The body of the post for label")
-
-class BridgeScoreInput(BaseModel):
-    item_id: str = Field(description="The ID of the item to score")
-    text: str = Field(description="The body of the post for scoring")
-
-class ScoreOutput(BaseModel):
-    item_id: str = Field(description="The ID of the item to score")
-    score: float = Field(description="Numerical score")
-    t_start: float = Field(description="Start time (seconds)", default=0)
-    t_end: float = Field(description="End time (seconds)", default=0)
+# KILL_DEADLINE_SECONDS = 10
+# TIME_LIMIT_SECONDS = 10
 
 
-class BridgeScoreOutput(ScoreOutput):
-    pass
+# class CivicLabelInput(BaseModel):
+#     item_id: str = Field(description="The ID of the item to label")
+#     text: str = Field(description="The body of the post for label")
 
-class CivicLabelOutput(ScoreOutput):
-    pass
+# class BridgeScoreInput(BaseModel):
+#     item_id: str = Field(description="The ID of the item to score")
+#     text: str = Field(description="The body of the post for scoring")
 
-class TimeoutException(Exception):
-    pass
-
-
-def do_civic_labelling(input: CivicLabelInput) -> CivicLabelOutput:
-    label = areCivic(input.text)
-    return CivicLabelOutput(
-        item_id=input.item_id,
-        score=label[0],
-    )
+# class ScoreOutput(BaseModel):
+#     item_id: str = Field(description="The ID of the item to score")
+#     score: float = Field(description="Numerical score")
+#     t_start: float = Field(description="Start time (seconds)", default=0)
+#     t_end: float = Field(description="End time (seconds)", default=0)
 
 
-@app.task(bind=True, time_limit=KILL_DEADLINE_SECONDS, soft_time_limit=TIME_LIMIT_SECONDS)
-def civic_labeller(self, **kwargs) -> dict[str, Any]:
-    """ Model to classify civic content
+# class BridgeScoreOutput(ScoreOutput):
+#     pass
 
-    Args:
-        **kwargs: Arbitrary keyword arguments. These should be convertible to CivicLabelInput,
-                  thus the input should contain `item_id` and `text`
+# class CivicLabelOutput(ScoreOutput):
+#     pass
 
-    Returns:
-        dict[str, Any]: The result of the sentiment scoring task. The result is a dictionary
-                        representation of CivicLabelOutput
-
-    The results are stored in the Celery result backend.
-    """
-    start = time.time()
-    task_id = self.request.id
-    worker_id = self.request.hostname
-    logger.info(f"Task {task_id} started by {worker_id}")
-    input = CivicLabelInput(**kwargs)
-    result = do_civic_labelling(input)
-    result.t_start = start
-    result.t_end = time.time()
-    return result.model_dump()
+# class TimeoutException(Exception):
+#     pass
 
 
-def do_bridge_scoring(input: BridgeScoreInput) -> BridgeScoreOutput:
-    label = getBridgeScore(input.text)
-    return BridgeScoreOutput(
-        item_id=input.item_id,
-        score=label[0],
-    )
+# def do_civic_labelling(input: CivicLabelInput) -> CivicLabelOutput:
+#     label = areCivic(input.text)
+#     return CivicLabelOutput(
+#         item_id=input.item_id,
+#         score=label[0],
+#     )
 
 
-@app.task(bind=True, time_limit=KILL_DEADLINE_SECONDS, soft_time_limit=TIME_LIMIT_SECONDS)
-def bridge_scorer(self, **kwargs) -> dict[str, Any]:
-    """ Model to classify civic content
+# @app.task(bind=True, time_limit=KILL_DEADLINE_SECONDS, soft_time_limit=TIME_LIMIT_SECONDS)
+# def civic_labeller(self, **kwargs) -> dict[str, Any]:
+#     """ Model to classify civic content
 
-    Args:
-        **kwargs: Arbitrary keyword arguments. These should be convertible to CivicLabelInput,
-                  thus the input should contain `item_id` and `text`
+#     Args:
+#         **kwargs: Arbitrary keyword arguments. These should be convertible to CivicLabelInput,
+#                   thus the input should contain `item_id` and `text`
 
-    Returns:
-        dict[str, Any]: The result of the sentiment scoring task. The result is a dictionary
-                        representation of CivicLabelOutput
+#     Returns:
+#         dict[str, Any]: The result of the sentiment scoring task. The result is a dictionary
+#                         representation of CivicLabelOutput
 
-    The results are stored in the Celery result backend.
-    """
-    start = time.time()
-    task_id = self.request.id
-    worker_id = self.request.hostname
-    logger.info(f"Task {task_id} started by {worker_id}")
-    input = BridgeScoreInput(**kwargs)
-    result = do_bridge_scoring(input)
-    result.t_start = start
-    result.t_end = time.time()
-    return result.model_dump()
+#     The results are stored in the Celery result backend.
+#     """
+#     start = time.time()
+#     task_id = self.request.id
+#     worker_id = self.request.hostname
+#     logger.info(f"Task {task_id} started by {worker_id}")
+#     input = CivicLabelInput(**kwargs)
+#     result = do_civic_labelling(input)
+#     result.t_start = start
+#     result.t_end = time.time()
+#     return result.model_dump()
+
+
+# def do_bridge_scoring(input: BridgeScoreInput) -> BridgeScoreOutput:
+#     label = getBridgeScore(input.text)
+#     return BridgeScoreOutput(
+#         item_id=input.item_id,
+#         score=label[0],
+#     )
+
+
+# @app.task(bind=True, time_limit=KILL_DEADLINE_SECONDS, soft_time_limit=TIME_LIMIT_SECONDS)
+# def bridge_scorer(self, **kwargs) -> dict[str, Any]:
+#     """ Model to classify civic content
+
+#     Args:
+#         **kwargs: Arbitrary keyword arguments. These should be convertible to CivicLabelInput,
+#                   thus the input should contain `item_id` and `text`
+
+#     Returns:
+#         dict[str, Any]: The result of the sentiment scoring task. The result is a dictionary
+#                         representation of CivicLabelOutput
+
+#     The results are stored in the Celery result backend.
+#     """
+#     start = time.time()
+#     task_id = self.request.id
+#     worker_id = self.request.hostname
+#     logger.info(f"Task {task_id} started by {worker_id}")
+#     input = BridgeScoreInput(**kwargs)
+#     result = do_bridge_scoring(input)
+#     result.t_start = start
+#     result.t_end = time.time()
+#     return result.model_dump()
 

@@ -1,6 +1,6 @@
 **Note** — the main project files for each of the components are located in `components`. This directory structure is a relic of starting from the template code which we can fix at some point.
 
-**Helpful Docs** — [Poetry](https://python-poetry.org/docs/basic-usage/),  [Celery](https://docs.celeryq.dev/en/stable/)
+**Helpful Docs** — [Poetry](https://python-poetry.org/docs/basic-usage/),  [Celery](https://docs.celeryq.dev/en/stable/), [Redis](https://redis.io/docs/latest/commands/json.get/), [JSONPath](https://github.com/json-path/JsonPath)
 
 ## Quick Reference
 

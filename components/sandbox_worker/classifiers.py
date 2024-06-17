@@ -8,14 +8,14 @@ from transformers import DistilBertModel, DistilBertTokenizer, DistilBertForSequ
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 #model_name = "kornosk/polibertweet-mlm"  # Replace with the specific PoliBERT model if needed
-civic_tokenizer = AutoTokenizer.from_pretrained("./fine_tuned_polibert_unfreeze_1")
-civic_model = AutoModelForSequenceClassification.from_pretrained("./fine_tuned_polibert_unfreeze_1")
+civic_tokenizer = AutoTokenizer.from_pretrained("./model_civic")
+civic_model = AutoModelForSequenceClassification.from_pretrained("./model_civic")
 civic_model.to(device)
 
 # Load pre-trained BERT model and tokenizer
 #model_name = 'distilbert-base-uncased'
-bridge_tokenizer = DistilBertTokenizer.from_pretrained("./v4")
-bridge_model = DistilBertForSequenceClassification.from_pretrained("./v4") 
+bridge_tokenizer = DistilBertTokenizer.from_pretrained("./model_bridging")
+bridge_model = DistilBertForSequenceClassification.from_pretrained("./model_bridging") 
 bridge_model.to(device)
 
 

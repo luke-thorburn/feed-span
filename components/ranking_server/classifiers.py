@@ -1,8 +1,5 @@
 import torch
-import time
-import pandas as pd
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
-from transformers import DistilBertModel, DistilBertTokenizer, DistilBertForSequenceClassification
 import os
 print("Current working directory:", os.getcwd())
 
@@ -10,30 +7,9 @@ print("Current working directory:", os.getcwd())
 # Check if GPU is available and move the model to the appropriate device
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-civic_tokenizer = AutoTokenizer.from_pretrained("ranking_server/fine_tuned_polibert_unfreeze_1")
-civic_model = AutoModelForSequenceClassification.from_pretrained("ranking_server/fine_tuned_polibert_unfreeze_1")
+civic_tokenizer = AutoTokenizer.from_pretrained("ranking_server/model_civic")
+civic_model = AutoModelForSequenceClassification.from_pretrained("ranking_server/model_civic")
 civic_model.to(device)
-
-# Load pre-trained BERT model and tokenizer
-bridge_tokenizer = DistilBertTokenizer.from_pretrained("ranking_server/v4")
-bridge_model = DistilBertForSequenceClassification.from_pretrained("ranking_server/v4") 
-bridge_model.to(device)
-
-
-def getBridgeScore(text):
-
-    # Tokenize the input text
-    inputs = bridge_tokenizer(text, return_tensors='pt', padding=True, truncation=True)
-    input_ids = inputs['input_ids'].to(device)
-    attention_mask = inputs['attention_mask'].to(device)
-    
-    # Perform inference
-    bridge_model.eval()
-    with torch.no_grad():
-        outputs = bridge_model(input_ids, attention_mask=attention_mask)
-        prediction = outputs.logits.item()
-    
-    return prediction
 
 
 def areCivic(texts):

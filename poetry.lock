@@ -3758,11 +3758,11 @@ test = ["big-O", "importlib-resources", "jaraco.functools", "jaraco.itertools", 
 [extras]
 feed-span = ["pandas", "psycopg2-binary", "ranking-challenge", "redis", "uvicorn"]
 feed-span-job-scheduler = ["celery-redbeat"]
-feed-span-ranking-server = ["ranking-challenge", "redis", "torch", "transformers", "uvicorn"]
-feed-span-sandbox-worker = ["celery-redbeat", "pandas", "psycopg2-binary", "redis", "sqlalchemy"]
+feed-span-ranking-server = ["ranking-challenge", "redis", "uvicorn"]
+feed-span-sandbox-worker = ["celery-redbeat", "pandas", "psycopg2-binary", "redis", "sqlalchemy", "torch", "transformers"]
 feed-span-scorer-worker = ["fastapi", "pandas", "pydantic", "redis", "torch", "transformers", "uvicorn"]
 
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10"
-content-hash = "9d4d29bd1442bb1cd94df9b69efd923f532b318568f7ed633dfbaf0bf9e13376"
+content-hash = "9fff5aa138210cec6bf59e7bc7a73f10639347c37d900a7e222983a1a283a082"

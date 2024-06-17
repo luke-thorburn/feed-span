@@ -45,11 +45,11 @@ pre-commit = "^3.7.1"
 fakeredis = "*"
 
 [tool.poetry.extras]
-feed_span_ranking_server = ["celery", "uvicorn", "ranking-challenge", "redis", "pytest", "torch", "transformers"]
+feed_span_ranking_server = ["celery", "uvicorn", "ranking-challenge", "redis", "pytest"]
 feed_span_scorer_worker = ["pydantic", "celery", "fastapi", "redis", "pytest", "pandas", "uvicorn", "torch", "transformers"]
 feed_span = ["celery", "redis", "pytest", "pandas", "uvicorn", "ranking-challenge", "psycopg2-binary"]
 feed_span_job_scheduler = ["celery", "celery-redbeat"]
-feed_span_sandbox_worker = ["celery", "redis", "pytest", "pandas", "psycopg2", "celery-redbeat", "sqlalchemy", "psycopg2-binary"]
+feed_span_sandbox_worker = ["celery", "redis", "pytest", "pandas", "psycopg2", "celery-redbeat", "sqlalchemy", "psycopg2-binary", "torch", "transformers"]
 
 [tool.poetry.urls]
 homepage = "https://humancompatible.ai/news/2024/01/18/the-prosocial-ranking-challenge-60000-in-prizes-for-better-social-media-algorithms/"

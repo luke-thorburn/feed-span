@@ -117,6 +117,7 @@ def insert_to_redis(result_key: str) -> bool:
     posts = []
     for k in range(10):
         posts.append({
+            "id": str(random.random()),
             "url": "dummy_url",
             "bridging_score": random.random(),
             "recommended_to": [],
