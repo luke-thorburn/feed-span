@@ -105,6 +105,8 @@ def rank(ranking_request: RankingRequest) -> RankingResponse:
     ranked_ids = []
     inserted_posts = []
 
+    changelog = []
+
     for id in item_ids:
         if id in civic_post_ids:
             candidate = replacement_candidates.pop(0)
@@ -114,12 +116,16 @@ def rank(ranking_request: RankingRequest) -> RankingResponse:
                     "id": candidate['id'],
                     "url": candidate['url']
                 })
+                changelog.append(
+                    "id_removed": id,
+                    "id_inserted": candidate['id'],
+                    "bridging_score_inserted": candidate['bridging_score']
+                )
                 counter += 1
             else:
                 ranked_ids.append(id)
         else:
             ranked_ids.append(id)
-
 
 
     # If proportion of civic content less than a threshold, insert additional
@@ -136,14 +142,39 @@ def rank(ranking_request: RankingRequest) -> RankingResponse:
                     "id": candidate['id'],
                     "url": candidate['url']
                 })
+                changelog.append(
+                    "id_removed": None,
+                    "id_inserted": candidate['id'],
+                    "bridging_score_inserted": candidate['bridging_score'],
+                )
                 counter += 1
                 
     
-    # TODO: Add ranking_request.session.user_id to item.recommended_to for all the relevant posts.              
+    # Mark posts as recommended_to user in Redis.
+    # (Here we just log the details of the ranking request to Redis. The sandbox
+    #  worker then merges these into postgres and updates the recommended_to
+    #  field.)
+
+    request_log = {
+        "user": session.user_id,
+        "platform": session.platform,
+        "timestamp": session.current_time,
+        "items": [item for item, is_civic in zip(items, items_civic_status) if is_civic],
+        "changelog": changelog
+    }
+    if not redis_client().exists("ranking_requests"):
+        redis_client().json().set( "ranking_requests",  "$", [] )
+    redis_client().execute_command(
+        'JSON.ARRAPPEND', # Redis command
+        f"posts_{session.platform}", # Redis key
+        "$", # Redis JSON path
+        request_log
+    )
+
     # TODO: Account for the possibility of running out of bridging posts.
     # TODO: Logging.
     # TODO: Diversity pass.
-
+    
 
 
     #with ThreadPoolExecutor() as executor:

@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS {table_name} (
   is_civic BOOLEAN,
   bridging_score REAL,
   is_bridging BOOLEAN,
-  recommended_to TEXT
+  recommended_to TEXT DEFAULT "[]"
 );
 """
 

@@ -110,6 +110,84 @@ def process_scraped_posts(d1: str, d2: str) -> bool:
 
 
 @app.task
+def regular_redis_postgres_sync(result_key: str) -> bool:
+    """...
+    """
+
+    r = redis.Redis.from_url(REDIS_DB)
+    con = psycopg2.connect(DB_URI)
+    cur = con.cursor()
+    
+    # Process logs of ranking requests.
+    
+    if not r.exists("ranking_requests"):
+        r.json().set("ranking_requests",  "$", [])
+    
+    n_requests = r.json().arrlen("ranking_requests", "$")[0]
+    
+    while n_requests > 0:
+    
+        request = r.json().arrpop("ranking_requests", "$", 0)
+        changelog = request['changelog']
+
+        # Updated recommended_to fields.
+
+        user_id = request["user_id"]
+        for item_id in [x['id_inserted'] for x in changelog]:
+            query = f"SELECT recommended_to FROM posts WHERE id = {item_id}"
+            cur.execute(query)
+            recommended_to = json.loads(cur.fetchone()[0])
+            if user_id not in recommended_to:
+                recommended_to.append(user_id)
+            query = f"UPDATE posts SET recommended_to = {json.dumps(recommended_to)} WHERE id = {item_id}"
+            cur.execute(query)
+            con.commit()
+
+        # Keep log of what was replaced with what, and their relative bridginess.
+
+        platform = request["platform"]
+        timestamp = request["current_time"]
+        
+        for change in changelog:
+
+            change['platform'] = platform
+            change['timestamp'] = timestamp
+            change['user_id'] = user_id
+
+            if change['id_removed'] is not None:
+
+                item_removed = [item for item in request['items'] where item['id'] == change['id_removed']][0]
+                bridging_score = getBridgeScore(item_removed['text'])
+                change['bridging_score_removed'] = bridging_score
+
+        # TODO: Check changes table exists.
+        # TODO: Account for optional values in below code.
+
+        values = [(
+            x['user_id'],
+            x['platform'],
+            x['timestamp'],
+            x['id_removed'] if x['id_removed'] else None,
+            x['id_inserted'],
+            x['bridging_score_removed'] if x['bridging_score_removed'] else None,
+            x['bridging_score_inserted']
+        ) for x in changelog]
+        values = str(values).strip('[]')
+        query = f"INSERT INTO changes (user_id, platform, timestamp, id_removed, id_inserted, bridging_score_removed, bridging_score_inserted) VALUES {values};"
+        cur.execute(query)
+        con.commit()
+
+        n_requests = r.json().arrlen( "ranking_requests", "$" )[0]
+    
+    # Refresh posts in Redis (with updated recommended_to fields).
+
+    # TODO: This ^
+
+    return True
+
+
+
+@app.task
 def insert_to_redis(result_key: str) -> bool:
     """...
     """
