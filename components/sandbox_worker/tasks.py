@@ -13,6 +13,7 @@ from sqlalchemy import create_engine
 from util.scheduler import ScheduledTask, schedule_tasks
 
 from sandbox_worker.celery_app import app
+import scraper_worker.sql_statements as my_sql
 
 logging.basicConfig(
     level=logging.INFO,
@@ -41,32 +42,6 @@ def isCivic(text):
         return False
 
 
-# @app.task
-# def query_posts_db(query: str) -> list[Any]:
-#     """Query the posts database and return the results.
-
-#     Args:
-#         query (str): The query to run on the posts database.
-
-#     Returns:
-#         list[Any]: The results of the query. Typically this will be list of lists, where each
-#                    list represents a row in the database.
-
-#     The results of the query are stored in the Celery result backend, which we
-#     have configured as a Redis database. Great care therefore should be taken
-#     when using this function with large datasets; it is recommended to use this
-#     function only in prototyping or when a small result set is explicitly
-#     guaranteed.
-#     """
-#     con = psycopg2.connect(DB_URI)
-#     try:
-#         cur = con.cursor()
-#         cur.execute(query)
-#         results = cur.fetchall()
-#     finally:
-#         con.close()
-#     return results
-
 def refresh_posts_in_redis():
     """
     This function updates the candidate bridging posts stored in Redis, along
@@ -94,18 +69,18 @@ def refresh_posts_in_redis():
             'post_id': row[0],
             'platform': row[1],
             'url': row[2],
-            'scraped_at': row[3],
-            'posted_at': row[4],
+            'scraped_at': str(row[3]),
+            'posted_at': str(row[4]),
             'bridging_score': row[5],
             'recommended_to': json.loads(row[6])
         })
 
     # Wrangle into correct format.
 
-    posts_twitter = [item for item in items where item['platform'] == 'twitter']
-    posts_facebook = [item for item in items where item['platform'] == 'facebook']
-    posts_reddit = [item for item in items where item['platform'] == 'reddit']
-
+    posts_twitter = [item for item in items if item['platform'] == 'twitter']
+    posts_facebook = [item for item in items if item['platform'] == 'facebook']
+    posts_reddit = [item for item in items if item['platform'] == 'reddit']
+    
     # Write posts to redis.
 
     r.json().set( "posts_twitter",  "$", posts_twitter )
@@ -188,26 +163,26 @@ def sync_databases(result_key: str) -> bool:
     
     while n_requests > 0:
     
-        request = r.json().arrpop("ranking_requests", "$", 0)
+        request = json.loads(r.json().arrpop("ranking_requests", "$", 0)[0])
         changelog = request['changelog']
 
         # Updated recommended_to fields.
 
         user_id = request["user_id"]
         for item_id in [x['id_inserted'] for x in changelog]:
-            query = f"SELECT recommended_to FROM posts WHERE id = {item_id};"
+            query = f"SELECT recommended_to FROM posts WHERE post_id = '{item_id}';"
             cur.execute(query)
             recommended_to = json.loads(cur.fetchone()[0])
             if user_id not in recommended_to:
                 recommended_to.append(user_id)
-            query = f"UPDATE posts SET recommended_to = {json.dumps(recommended_to)} WHERE id = {item_id};"
+            query = f"UPDATE posts SET recommended_to = '{json.dumps(recommended_to)}' WHERE post_id = '{item_id}';"
             cur.execute(query)
             con.commit()
 
         # Keep log of what was replaced with what, and their relative bridginess.
 
         platform = request["platform"]
-        timestamp = request["current_time"]
+        timestamp = request["timestamp"]
         
         for change in changelog:
 
@@ -217,12 +192,13 @@ def sync_databases(result_key: str) -> bool:
 
             if change['id_removed'] is not None:
 
-                item_removed = [item for item in request['items'] where item['id'] == change['id_removed']][0]
+                item_removed = [item for item in request['items'] if item['id'] == change['id_removed']][0]
                 bridging_score = getBridgeScore(item_removed['text'])
                 change['bridging_score_removed'] = bridging_score
 
-        # TODO: Check changes table exists.
-        # TODO: Account for optional values in below code.
+        # (ensure tables exist)
+        cur.execute(my_sql.POSTGRES_CREATE_TABLE_CHANGES)
+        cur.execute(my_sql.POSTGRES_CREATE_TABLE_REQUESTS)
 
         values = [(
             x['user_id'],
@@ -237,6 +213,12 @@ def sync_databases(result_key: str) -> bool:
         query = f"INSERT INTO changes (user_id, platform, timestamp, id_removed, id_inserted, bridging_score_removed, bridging_score_inserted) VALUES {values};"
         cur.execute(query)
         con.commit()
+
+        # Keep log of inventory supply and demand.
+
+        query = f"INSERT INTO requests (user_id, platform, timestamp, inventory_available, inventory_required) VALUES {str((
+            user_id, platform, timestamp, request['inventory_available'], request['inventory_required']
+        ))};"
 
         n_requests = r.json().arrlen( "ranking_requests", "$" )[0]
     

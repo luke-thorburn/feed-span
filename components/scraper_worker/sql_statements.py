@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS {table_name} (
   is_civic BOOLEAN,
   bridging_score REAL,
   is_bridging BOOLEAN,
-  recommended_to TEXT DEFAULT "[]"
+  recommended_to TEXT DEFAULT '[]'
 );
 """
 
@@ -20,6 +20,30 @@ CREATE INDEX IF NOT EXISTS idx_scraped_at ON {table_name}(scraped_at);
 CREATE INDEX IF NOT EXISTS idx_post_id ON {table_name}(post_id);
 CREATE INDEX IF NOT EXISTS idx_platform ON {table_name}(platform);
 CREATE INDEX IF NOT EXISTS idx_posted_at ON {table_name}(posted_at);
+"""
+
+POSTGRES_CREATE_TABLE_CHANGES = """
+CREATE TABLE IF NOT EXISTS changes (
+  id SERIAL PRIMARY KEY,
+  user_id TEXT,
+  platform TEXT,
+  timestamp TIMESTAMP WITH TIME ZONE,
+  id_removed TEXT,
+  id_inserted TEXT,
+  bridging_score_removed REAL,
+  bridging_score_inserted REAL
+);
+"""
+
+POSTGRES_CREATE_TABLE_REQUESTS = """
+CREATE TABLE IF NOT EXISTS requests (
+  id SERIAL PRIMARY KEY,
+  user_id TEXT,
+  platform TEXT,
+  timestamp TIMESTAMP WITH TIME ZONE,
+  inventory_available INTEGER,
+  inventory_required INTEGER
+);
 """
 
 POSTGRES_CREATE_TABLE_SCRAPER_ERRORS = """

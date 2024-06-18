@@ -6,7 +6,6 @@ import logging
 import os
 import json
 from concurrent.futures.thread import ThreadPoolExecutor
-# import ranking_server.test_data
 
 import redis
 from fastapi import FastAPI
@@ -14,7 +13,6 @@ from fastapi import FastAPI
 from ranking_challenge.request import RankingRequest
 from ranking_challenge.response import RankingResponse
 from scorer_worker.scorer_basic import compute_scores as compute_scores_basic
-from ranking_server.classifiers import areCivic
 
 
 # ------------------------------------------------------------------------------
@@ -91,18 +89,16 @@ def rank(ranking_request: RankingRequest) -> RankingResponse:
 
     # Fetch bridging posts from Redis. (that have not already been recommended to user)
 
-    #result = redis_client().execute_command(
-    #    'JSON.GET', # Redis command
-    #    f"posts_{session.platform}", # Redis key
-    #    f"$[?(@.recommended_to[*] != {session.user_id})]" # JSONPath filters # seems buggy --> causing errors
-    #)
+    replacement_candidates = redis_client().execute_command(
+       'JSON.GET', # Redis command
+       f"posts_{session.platform}", # Redis key
+       f"$[?(@.recommended_to[*] != '{session.user_id}')]" # JSONPath filters
+    )
 
-    #replacement_candidates = json.loads(result) if result else []
-
-    replacement_candidates = [
-    {'bridging_score': 0.556, 'id': 'b001', 'url': 'https://twitter.com/Horse_ebooks/status/2184395932409569281'},
-    {'bridging_score': 0.688, 'id': 'b002', 'url': 'https://twitter.com/Horse_ebooks/status/2184395932409569282'},
-    {'bridging_score': 0.312, 'id': 'b003', 'url': 'https://twitter.com/Horse_ebooks/status/2184395932409569283'},] # dummy posts for testing
+    # replacement_candidates = [
+    # {'bridging_score': 0.556, 'id': 'b001', 'url': 'https://twitter.com/Horse_ebooks/status/2184395932409569281'},
+    # {'bridging_score': 0.688, 'id': 'b002', 'url': 'https://twitter.com/Horse_ebooks/status/2184395932409569282'},
+    # {'bridging_score': 0.312, 'id': 'b003', 'url': 'https://twitter.com/Horse_ebooks/status/2184395932409569283'},] # dummy posts for testing
 
     # TODO: Figure out how to trade off recency with bridgingness. For now, just
     #       assume all posts in redis are sufficiently recent.
@@ -114,10 +110,12 @@ def rank(ranking_request: RankingRequest) -> RankingResponse:
         key=lambda x: x['bridging_score'],
         reverse = True
     )
+    inventory_available = len(replacement_candidates)
     
     # Replace civic posts with bridging (civic) posts.
     item_ids = [item.id for item in items]
     civic_post_ids = [id for id, is_civic in zip(item_ids, items_civic_status) if is_civic]
+    inventory_required = len(civic_post_ids)
 
     counter = 0
     ranked_ids = []
@@ -126,7 +124,7 @@ def rank(ranking_request: RankingRequest) -> RankingResponse:
     changelog = []
 
     for id in item_ids:
-        if id in civic_post_ids:
+        if id in civic_post_ids and len(replacement_candidates) > 0:
             candidate = replacement_candidates.pop(0)
             if candidate['id'] not in item_ids: # deduplication
                 ranked_ids.append(candidate['id'])
@@ -152,21 +150,24 @@ def rank(ranking_request: RankingRequest) -> RankingResponse:
     if counter < int(0.1 * len(item_ids)): # less than 10% dose size
         # insert more
         diff = int(0.1 * len(item_ids)) - counter
+        inventory_required += diff
         for num in range(diff):
-            candidate = replacement_candidates.pop(0)
-            if candidate['id'] not in ranked_ids: # deduplication
-                ranked_ids.append(candidate['id'])
-                inserted_posts.append({
-                    "id": candidate['id'],
-                    "url": candidate['url']
-                })
-                changelog.append(
-                    "id_removed": None,
-                    "id_inserted": candidate['id'],
-                    "bridging_score_inserted": candidate['bridging_score'],
-                )
-                counter += 1
-                
+            if len(replacement_candidates) > 0:
+                candidate = replacement_candidates.pop(0)
+                if candidate['id'] not in ranked_ids: # deduplication
+                    ranked_ids.append(candidate['id'])
+                    inserted_posts.append({
+                        "id": candidate['id'],
+                        "url": candidate['url']
+                    })
+                    changelog.append(
+                        "id_removed": None,
+                        "id_inserted": candidate['id'],
+                        "bridging_score_inserted": candidate['bridging_score'],
+                    )
+                    counter += 1
+
+
     
     # Mark posts as recommended_to user in Redis.
     # (Here we just log the details of the ranking request to Redis. The sandbox
@@ -174,25 +175,26 @@ def rank(ranking_request: RankingRequest) -> RankingResponse:
     #  field.)
 
     request_log = {
-        "user": session.user_id,
+        "user_id": session.user_id,
         "platform": session.platform,
         "timestamp": session.current_time,
         "items": [item for item, is_civic in zip(items, items_civic_status) if is_civic],
-        "changelog": changelog
+        "changelog": changelog,
+        "inventory_available": inventory_available,
+        "inventory_required": inventory_required,
     }
     if not redis_client().exists("ranking_requests"):
         redis_client().json().set( "ranking_requests",  "$", [] )
     redis_client().execute_command(
         'JSON.ARRAPPEND', # Redis command
-        f"posts_{session.platform}", # Redis key
+        f"ranking_requests", # Redis key
         "$", # Redis JSON path
-        request_log
+        json.dumps(request_log)
     )
 
-    # TODO: Account for the possibility of running out of bridging posts.
     # TODO: Logging.
-    # TODO: Diversity pass.
-
+    # TODO: Error checking.
+    # TODO: Close db connections.
 
     result = {
         "ranked_ids": ranked_ids,

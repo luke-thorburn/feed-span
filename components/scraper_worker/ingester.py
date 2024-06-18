@@ -1,4 +1,5 @@
 import json
+import uuid
 import logging
 import os
 from datetime import datetime
@@ -98,8 +99,8 @@ def process_success(task_id: str, timestamp: datetime, results: list[dict]):
     if task_id == "twitter":    
         rows = [
             ScraperData(
-                post_id=result["id"],
                 platform="twitter",
+                post_id=str(uuid.uuid4()),
                 url=result["url"],
                 text=result["text"],
                 posted_at=result["createdAt"]
@@ -110,7 +111,8 @@ def process_success(task_id: str, timestamp: datetime, results: list[dict]):
         rows = [
             ScraperData(
                 platform="facebook",
-                url=result["url"],
+                post_id=str(uuid.uuid4())
+                url=result["topLevelUrl"],
                 text=result["text"],
                 posted_at=result["time"]
             )
