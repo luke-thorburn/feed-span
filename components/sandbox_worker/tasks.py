@@ -67,6 +67,55 @@ def isCivic(text):
 #         con.close()
 #     return results
 
+def refresh_posts_in_redis():
+    """
+    This function updates the candidate bridging posts stored in Redis, along
+    with their metadata, from the complete set of posts stored in Postgres.
+
+    It is intended to be run whenever Postgres gets updated in order to sync
+    any changes to Redis.
+    """
+
+    con = psycopg2.connect(DB_URI)
+    cur = con.cursor()
+    r = redis.Redis.from_url(REDIS_DB)
+
+    # Fetch posts from postgres.
+
+    # TODO: Ensure timestamp formats are all consistent.
+    # TODO: Ensure ids formats are all consistent.
+
+    query = f"SELECT post_id, platform, url, scraped_at, posted_at, bridging_score, recommended_to FROM posts WHERE is_classified = TRUE AND is_civic = TRUE ORDER BY scraped_at DESC LIMIT 1000;"
+    cur.execute(query)
+    results = cur.fetchall()
+    items = []
+    for row in results:
+        items.append({
+            'post_id': row[0],
+            'platform': row[1],
+            'url': row[2],
+            'scraped_at': row[3],
+            'posted_at': row[4],
+            'bridging_score': row[5],
+            'recommended_to': json.loads(row[6])
+        })
+
+    # Wrangle into correct format.
+
+    posts_twitter = [item for item in items where item['platform'] == 'twitter']
+    posts_facebook = [item for item in items where item['platform'] == 'facebook']
+    posts_reddit = [item for item in items where item['platform'] == 'reddit']
+
+    # Write posts to redis.
+
+    r.json().set( "posts_twitter",  "$", posts_twitter )
+    r.json().set( "posts_facebook", "$", posts_reddit )
+    r.json().set( "posts_reddit",   "$", posts_facebook )
+
+    con.close()
+
+    return True
+
 
 @app.task
 def process_scraped_posts(d1: str, d2: str) -> bool:
@@ -95,7 +144,7 @@ def process_scraped_posts(d1: str, d2: str) -> bool:
             bridging_score = 0
             if is_civic:
                 bridging_score = getBridgeScore(row[5])
-            query = f"UPDATE posts SET bridging_score = {bridging_score}, is_civic = {is_civic}, is_classified = TRUE WHERE id = {row[0]}"
+            query = f"UPDATE posts SET bridging_score = {bridging_score}, is_civic = {is_civic}, is_classified = TRUE WHERE id = {row[0]};"
             cur.execute(query)
             con.commit()
 
@@ -104,14 +153,26 @@ def process_scraped_posts(d1: str, d2: str) -> bool:
         cur.execute(query)
         con.commit()
         
+        refresh_posts_in_redis()
+
         return True
     finally:
         con.close()
 
 
 @app.task
-def regular_redis_postgres_sync(result_key: str) -> bool:
-    """...
+def sync_databases(result_key: str) -> bool:
+    """
+    This function performs a routine sync between redis and postgres.
+    
+    Specifically it:
+    1. Redis -> Postgres
+        - Updates recommended_to fields
+        - Saves a log of what was replaced with what, and their relative bridginess
+    2. Redis Cleanup
+        - Removes logs of ranking requests as it processes them
+    3. Postgres -> Redit
+        - Refreshes candidate bridging posts (particularly with updated recommended_to)
     """
 
     r = redis.Redis.from_url(REDIS_DB)
@@ -134,12 +195,12 @@ def regular_redis_postgres_sync(result_key: str) -> bool:
 
         user_id = request["user_id"]
         for item_id in [x['id_inserted'] for x in changelog]:
-            query = f"SELECT recommended_to FROM posts WHERE id = {item_id}"
+            query = f"SELECT recommended_to FROM posts WHERE id = {item_id};"
             cur.execute(query)
             recommended_to = json.loads(cur.fetchone()[0])
             if user_id not in recommended_to:
                 recommended_to.append(user_id)
-            query = f"UPDATE posts SET recommended_to = {json.dumps(recommended_to)} WHERE id = {item_id}"
+            query = f"UPDATE posts SET recommended_to = {json.dumps(recommended_to)} WHERE id = {item_id};"
             cur.execute(query)
             con.commit()
 
@@ -179,33 +240,12 @@ def regular_redis_postgres_sync(result_key: str) -> bool:
 
         n_requests = r.json().arrlen( "ranking_requests", "$" )[0]
     
+    con.close()
+
     # Refresh posts in Redis (with updated recommended_to fields).
 
-    # TODO: This ^
+    refresh_posts_in_redis()
 
-    return True
-
-
-
-@app.task
-def insert_to_redis(result_key: str) -> bool:
-    """...
-    """
-
-    posts = []
-    for k in range(10):
-        posts.append({
-            "id": str(random.random()),
-            "url": "dummy_url",
-            "bridging_score": random.random(),
-            "recommended_to": [],
-        })
-
-    r = redis.Redis.from_url(REDIS_DB)
-    r.json().set( "posts_twitter",  "$", posts )
-    r.json().set( "posts_facebook", "$", posts )
-    r.json().set( "posts_reddit",   "$", posts )
-    
     return True
 
 
@@ -217,11 +257,11 @@ def setup_periodic_tasks(sender, **kwargs):
     task1 = ScheduledTask(
         process_scraped_posts,
         args=("2017-05-31", "2017-06-01"),
-        interval_seconds=10,
+        interval_seconds=600,
     )
     task2 = ScheduledTask(
-        insert_to_redis,
+        sync_databases,
         args=("dummy_argument",),   
-        interval_seconds=60,
+        interval_seconds=600,
     )
     schedule_tasks(app, [task1, task2], logger=logger)
