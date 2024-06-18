@@ -89,16 +89,16 @@ def rank(ranking_request: RankingRequest) -> RankingResponse:
 
     # Fetch bridging posts from Redis. (that have not already been recommended to user)
 
-    replacement_candidates = redis_client().execute_command(
-       'JSON.GET', # Redis command
-       f"posts_{session.platform}", # Redis key
-       f"$[?(@.recommended_to[*] != '{session.user_id}')]" # JSONPath filters
-    )
+    #replacement_candidates = redis_client().execute_command(
+    #   'JSON.GET', # Redis command
+    #   f"posts_{session.platform}", # Redis key
+    #   f"$[?(@.recommended_to[*] != '{session.user_id}')]" # JSONPath filters
+    #)
 
-    # replacement_candidates = [
-    # {'bridging_score': 0.556, 'id': 'b001', 'url': 'https://twitter.com/Horse_ebooks/status/2184395932409569281'},
-    # {'bridging_score': 0.688, 'id': 'b002', 'url': 'https://twitter.com/Horse_ebooks/status/2184395932409569282'},
-    # {'bridging_score': 0.312, 'id': 'b003', 'url': 'https://twitter.com/Horse_ebooks/status/2184395932409569283'},] # dummy posts for testing
+    replacement_candidates = [
+    {'bridging_score': 0.556, 'id': 'b001', 'url': 'https://twitter.com/Horse_ebooks/status/2184395932409569281'},
+    {'bridging_score': 0.688, 'id': 'b002', 'url': 'https://twitter.com/Horse_ebooks/status/2184395932409569282'},
+    {'bridging_score': 0.312, 'id': 'b003', 'url': 'https://twitter.com/Horse_ebooks/status/2184395932409569283'},] # dummy posts for testing
 
     # TODO: Figure out how to trade off recency with bridgingness. For now, just
     #       assume all posts in redis are sufficiently recent.
@@ -132,10 +132,10 @@ def rank(ranking_request: RankingRequest) -> RankingResponse:
                     "id": candidate['id'],
                     "url": candidate['url']
                 })
-                changelog.append(
+                changelog.append({
                     "id_removed": id,
                     "id_inserted": candidate['id'],
-                    "bridging_score_inserted": candidate['bridging_score']
+                    "bridging_score_inserted": candidate['bridging_score']}
                 )
                 counter += 1
             else:
@@ -160,10 +160,10 @@ def rank(ranking_request: RankingRequest) -> RankingResponse:
                         "id": candidate['id'],
                         "url": candidate['url']
                     })
-                    changelog.append(
+                    changelog.append({
                         "id_removed": None,
                         "id_inserted": candidate['id'],
-                        "bridging_score_inserted": candidate['bridging_score'],
+                        "bridging_score_inserted": candidate['bridging_score']}
                     )
                     counter += 1
 
@@ -177,8 +177,8 @@ def rank(ranking_request: RankingRequest) -> RankingResponse:
     request_log = {
         "user_id": session.user_id,
         "platform": session.platform,
-        "timestamp": session.current_time,
-        "items": [item for item, is_civic in zip(items, items_civic_status) if is_civic],
+        "timestamp": str(session.current_time),
+        "items": [item_id for item_id, is_civic in zip(item_ids, items_civic_status) if is_civic],
         "changelog": changelog,
         "inventory_available": inventory_available,
         "inventory_required": inventory_required,

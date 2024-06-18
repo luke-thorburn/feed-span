@@ -216,9 +216,7 @@ def sync_databases(result_key: str) -> bool:
 
         # Keep log of inventory supply and demand.
 
-        query = f"INSERT INTO requests (user_id, platform, timestamp, inventory_available, inventory_required) VALUES {str((
-            user_id, platform, timestamp, request['inventory_available'], request['inventory_required']
-        ))};"
+        query = f"INSERT INTO requests (user_id, platform, timestamp, inventory_available, inventory_required) VALUES {str(user_id, platform, timestamp, request['inventory_available'], request['inventory_required'])};"
 
         n_requests = r.json().arrlen( "ranking_requests", "$" )[0]
     
