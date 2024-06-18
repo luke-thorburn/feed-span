@@ -5,7 +5,7 @@
 import logging
 import os
 import json
-# from concurrent.futures.thread import ThreadPoolExecutor
+from concurrent.futures.thread import ThreadPoolExecutor
 # import ranking_server.test_data
 
 import redis
@@ -13,7 +13,7 @@ from fastapi import FastAPI
 # from fastapi.middleware.cors import CORSMiddleware
 from ranking_challenge.request import RankingRequest
 from ranking_challenge.response import RankingResponse
-# from scorer_worker.scorer_basic import compute_scores as compute_scores_basic
+from scorer_worker.scorer_basic import compute_scores as compute_scores_basic
 from ranking_server.classifiers import areCivic
 
 
@@ -71,25 +71,44 @@ def rank(ranking_request: RankingRequest) -> RankingResponse:
 
     # Run civic classifier.
 
-    items_text = [item.text for item in items]
-    items_civic_status = areCivic(items_text)
+    #items_text = [item.text for item in items] 
+    #items_civic_status = areCivic(items_text) # runs scoring on ranker, as backup
 
-    # Fetch bridging posts from Redis.
-    # (that have not already been recommended to user)
+    with ThreadPoolExecutor() as executor:
+        data = [{"item_id": x.id, "text": x.text} for x in ranking_request.items]
+        future = executor.submit(compute_scores_basic, "scorer_worker.tasks.civic_labeller", data)
+        try:
+            logger.info("Submitting score computation task")
+            scoring_result = future.result(timeout=5) # needs to be 0.5
+        except TimeoutError:
+            logger.error("Timed out waiting for score results")
+        except Exception as e:
+            logger.error(f"Error computing scores: {e}")
+        else:
+            logger.info(f"Computed scores: {scoring_result}")
+    
+    items_civic_status = [item['label'] for item in scoring_result]  
 
-    result = redis_client().execute_command(
-        'JSON.GET', # Redis command
-        f"posts_{session.platform}", # Redis key
-        f"$[?(@.recommended_to[*] != {session.user_id})]" # JSONPath filters
-    )
-    replacement_candidates = json.loads(result) if result else []
+    # Fetch bridging posts from Redis. (that have not already been recommended to user)
+
+    #result = redis_client().execute_command(
+    #    'JSON.GET', # Redis command
+    #    f"posts_{session.platform}", # Redis key
+    #    f"$[?(@.recommended_to[*] != {session.user_id})]" # JSONPath filters # seems buggy --> causing errors
+    #)
+
+    #replacement_candidates = json.loads(result) if result else []
+
+    replacement_candidates = [
+    {'bridging_score': 0.556, 'id': 'b001', 'url': 'https://twitter.com/Horse_ebooks/status/2184395932409569281'},
+    {'bridging_score': 0.688, 'id': 'b002', 'url': 'https://twitter.com/Horse_ebooks/status/2184395932409569282'},
+    {'bridging_score': 0.312, 'id': 'b003', 'url': 'https://twitter.com/Horse_ebooks/status/2184395932409569283'},] # dummy posts for testing
 
     # TODO: Figure out how to trade off recency with bridgingness. For now, just
     #       assume all posts in redis are sufficiently recent.
 
 
     # Sort them from most to least bridging.
-
     replacement_candidates = sorted(
         replacement_candidates,
         key=lambda x: x['bridging_score'],
@@ -97,7 +116,6 @@ def rank(ranking_request: RankingRequest) -> RankingResponse:
     )
     
     # Replace civic posts with bridging (civic) posts.
-
     item_ids = [item.id for item in items]
     civic_post_ids = [id for id, is_civic in zip(item_ids, items_civic_status) if is_civic]
 
@@ -174,22 +192,7 @@ def rank(ranking_request: RankingRequest) -> RankingResponse:
     # TODO: Account for the possibility of running out of bridging posts.
     # TODO: Logging.
     # TODO: Diversity pass.
-    
 
-
-    #with ThreadPoolExecutor() as executor:
-    #    data = [{"item_id": x.id, "text": x.text} for x in ranking_request.items]
-    #    future = executor.submit(compute_scores_basic, "scorer_worker.tasks.civic_labeller", data)
-    #    try:
-    #        # logger.info("Submitting score computation task")
-    #        scoring_result = future.result(timeout=0.5)
-    #    except TimeoutError:
-    #        logger.error("Timed out waiting for score results")
-    #    except Exception as e:
-    #        logger.error(f"Error computing scores: {e}")
-    #    else:
-    #        logger.info(f"Computed scores: {scoring_result}")
-    
 
     result = {
         "ranked_ids": ranked_ids,

@@ -24,7 +24,6 @@ from celery.exceptions import TimeoutError
 from celery.utils import uuid
 
 from scorer_worker.celery_app import app as celery_app
-from ranking_server.classifiers import areCivic, getBridgeScore
 
 logging.basicConfig(
     level=logging.INFO,
@@ -54,14 +53,14 @@ def compute_scores(task_name: str, input: list[dict[str, Any]]) -> list[dict[str
     for item in input:
         tasks.append(celery_app.signature(task_name, kwargs=item, options={"task_id": uuid()}))
 
-    logger.info("Sending the task group")
+    #logger.info("Sending the task group")
     async_result = group(tasks).apply_async()
     finished_tasks = []
     start = time.time()
     try:
         # if the tasks are very quick, you can try reducing the interval parameter
         # to get higher polling frequency
-        finished_tasks = async_result.get(timeout=DEADLINE_SECONDS, interval=0.1)
+        finished_tasks = async_result.get(timeout=DEADLINE_SECONDS, interval=1)
     except TimeoutError:
         logger.error(f"Timed out waiting for results after {time.time() - start} seconds")
     except Exception as e:
