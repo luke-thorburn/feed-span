@@ -68,6 +68,8 @@ def areCivic(texts):
 
 def isCivic(text):
 
+    logger.info(f"USING DEVICE: {device}")
+
     inputs = civic_tokenizer(text, return_tensors="pt", truncation=True, padding=True).to(device)
     logger.info(f'===== tokenized')
     # Perform the classification
