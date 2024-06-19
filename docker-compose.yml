@@ -107,44 +107,6 @@ services:
               capabilities: [gpu]
     command: ["poetry", "run", "celery", "-A", "scorer_worker.tasks", "worker", "-Q", "scorer", "--loglevel=info", "--pool=solo"]
 
-  celery-scorer-worker2:
-    build:
-      context: .
-      dockerfile: docker/Dockerfile.scorer_worker
-    depends_on:
-      - redis-celery-broker
-    environment:
-      CELERY_BROKER: redis://redis-celery-broker:6380
-      CELERY_BACKEND: redis://redis-celery-broker:6380
-      CIVIC_MODEL_S3_URL: https://feed-span-models.s3.us-east-2.amazonaws.com/civic_model.safetensors
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [gpu]
-    command: ["poetry", "run", "celery", "-A", "scorer_worker.tasks", "worker", "-Q", "scorer", "--loglevel=info", "--pool=solo"]
-
-  celery-scorer-worker3:
-    build:
-      context: .
-      dockerfile: docker/Dockerfile.scorer_worker
-    depends_on:
-      - redis-celery-broker
-    environment:
-      CELERY_BROKER: redis://redis-celery-broker:6380
-      CELERY_BACKEND: redis://redis-celery-broker:6380
-      CIVIC_MODEL_S3_URL: https://feed-span-models.s3.us-east-2.amazonaws.com/civic_model.safetensors
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [gpu]
-    command: ["poetry", "run", "celery", "-A", "scorer_worker.tasks", "worker", "-Q", "scorer", "--loglevel=info", "--pool=solo"]
-
 
   celery-scraper-worker0:
     build:
