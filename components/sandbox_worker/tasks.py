@@ -196,19 +196,20 @@ def sync_databases(result_key: str) -> bool:
         cur.execute(my_sql.POSTGRES_CREATE_TABLE_CHANGES)
         cur.execute(my_sql.POSTGRES_CREATE_TABLE_REQUESTS)
 
-        values = [(
-            x['user_id'],
-            x['platform'],
-            x['timestamp'],
-            x['id_removed'] if x['id_removed'] else None,
-            x['id_inserted'],
-            x['bridging_score_removed'] if x['bridging_score_removed'] else None,
-            x['bridging_score_inserted']
-        ) for x in changelog]
-        values = str(values).strip('[]')
-        query = f"INSERT INTO changes (user_id, platform, timestamp, id_removed, id_inserted, bridging_score_removed, bridging_score_inserted) VALUES {values};"
-        cur.execute(query)
-        con.commit()
+        if len(changelog) > 0:
+            values = [(
+                x['user_id'],
+                x['platform'],
+                x['timestamp'],
+                x['id_removed'] if x['id_removed'] else None,
+                x['id_inserted'],
+                x['bridging_score_removed'] if x['bridging_score_removed'] else None,
+                x['bridging_score_inserted']
+            ) for x in changelog]
+            values = str(values).strip('[]')
+            query = f"INSERT INTO changes (user_id, platform, timestamp, id_removed, id_inserted, bridging_score_removed, bridging_score_inserted) VALUES {values};"
+            cur.execute(query)
+            con.commit()
 
         # Keep log of inventory supply and demand.
 
