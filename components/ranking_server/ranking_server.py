@@ -95,6 +95,9 @@ def rank(ranking_request: RankingRequest) -> RankingResponse:
       f"$[?(@.recommended_to[*] != '{session.user_id}')]" # JSONPath filters
     )
 
+    if type(replacement_candidates) != 'list':
+        replacement_candidates = []
+
     # replacement_candidates = [
     # {'bridging_score': 0.556, 'id': 'b001', 'url': 'https://twitter.com/Horse_ebooks/status/2184395932409569281'},
     # {'bridging_score': 0.688, 'id': 'b002', 'url': 'https://twitter.com/Horse_ebooks/status/2184395932409569282'},
