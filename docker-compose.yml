@@ -64,7 +64,9 @@ services:
       resources:
         reservations:
           devices:
-            - capabilities: [gpu]
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
     command: ["poetry", "run", "celery", "-A", "sandbox_worker.tasks", "worker", "-Q", "tasks", "--loglevel=info"]
 
   celery-scorer-worker0:
@@ -81,7 +83,9 @@ services:
       resources:
         reservations:
           devices:
-            - capabilities: [gpu]
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
     command: ["poetry", "run", "celery", "-A", "scorer_worker.tasks", "worker", "-Q", "scorer", "--loglevel=info", "--pool=solo"]
 
   celery-scorer-worker1:
@@ -98,7 +102,9 @@ services:
       resources:
         reservations:
           devices:
-            - capabilities: [gpu]
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
     command: ["poetry", "run", "celery", "-A", "scorer_worker.tasks", "worker", "-Q", "scorer", "--loglevel=info", "--pool=solo"]
 
 
