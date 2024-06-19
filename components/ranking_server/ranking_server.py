@@ -90,9 +90,9 @@ def rank(ranking_request: RankingRequest) -> RankingResponse:
     # Fetch bridging posts from Redis. (that have not already been recommended to user)
 
     replacement_candidates = redis_client().execute_command(
-       'JSON.GET', # Redis command
-       f"posts_{session.platform}", # Redis key
-       f"$[?(@.recommended_to[*] != '{session.user_id}')]" # JSONPath filters
+      'JSON.GET', # Redis command
+      f"posts_{session.platform}", # Redis key
+      f"$[?(@.recommended_to[*] != '{session.user_id}')]" # JSONPath filters
     )
 
     # replacement_candidates = [
@@ -177,8 +177,8 @@ def rank(ranking_request: RankingRequest) -> RankingResponse:
     request_log = {
         "user_id": session.user_id,
         "platform": session.platform,
-        "timestamp": session.current_time,
-        "items": [item for item, is_civic in zip(items, items_civic_status) if is_civic],
+        "timestamp": str(session.current_time),
+        "items": [item_id for item_id, is_civic in zip(item_ids, items_civic_status) if is_civic],
         "changelog": changelog,
         "inventory_available": inventory_available,
         "inventory_required": inventory_required,
