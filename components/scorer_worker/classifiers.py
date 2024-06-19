@@ -32,6 +32,7 @@ def areCivic(texts):
     inputs = civic_tokenizer(texts, return_tensors="pt", truncation=True, padding=True).to(device)
 
     # Perform the classification
+    civic_model.eval()
     with torch.no_grad():
         outputs = civic_model(**inputs)
         logits = outputs.logits

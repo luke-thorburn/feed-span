@@ -48,23 +48,37 @@ def compute_scores(task_name: str, input: list[dict[str, Any]]) -> list[dict[str
     Returns:
         list[dict[str, Any]]: List of output dictionaries for the tasks.
     """
+    #logger.info(input)
+    if task_name == "scorer_worker.tasks.civic_labeller_list":
+        task = celery_app.signature(task_name, args=[input], options={"task_id": uuid()})
+        async_result = task.apply_async()
+        finished_tasks = []
+        start = time.time()
+        try:
+            # if the tasks are very quick, you can try reducing the interval parameter to get higher polling frequency
+            finished_tasks = async_result.get(timeout=DEADLINE_SECONDS, interval=1)
+        except Exception as e:
+            logger.error(f"Task runner threw an error: {e}")
 
-    tasks = []
-    for item in input:
-        tasks.append(celery_app.signature(task_name, kwargs=item, options={"task_id": uuid()}))
+        return finished_tasks
 
-    #logger.info("Sending the task group")
-    async_result = group(tasks).apply_async()
-    finished_tasks = []
-    start = time.time()
-    try:
-        # if the tasks are very quick, you can try reducing the interval parameter
-        # to get higher polling frequency
-        finished_tasks = async_result.get(timeout=DEADLINE_SECONDS, interval=1)
-    except TimeoutError:
-        logger.error(f"Timed out waiting for results after {time.time() - start} seconds")
-    except Exception as e:
-        logger.error(f"Task runner threw an error: {e}")
+    elif task_name == "scorer_worker.tasks.civic_labeller":
+        tasks = []
+        for item in input:
+            tasks.append(celery_app.signature(task_name, kwargs=item, options={"task_id": uuid()}))
 
-    logger.info(f"Finished tasks: {len(finished_tasks)}")
-    return finished_tasks
+        logger.info("Sending the task group")
+        async_result = group(tasks).apply_async()
+        finished_tasks = []
+        start = time.time()
+        try:
+            # if the tasks are very quick, you can try reducing the interval parameter
+            # to get higher polling frequency
+            finished_tasks = async_result.get(timeout=DEADLINE_SECONDS, interval=1)
+        except TimeoutError:
+            logger.error(f"Timed out waiting for results after {time.time() - start} seconds")
+        except Exception as e:
+            logger.error(f"Task runner threw an error: {e}")
+
+        logger.info(f"Finished tasks: {len(finished_tasks)}")
+        return finished_tasks

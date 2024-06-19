@@ -97,6 +97,36 @@ class RandomScoreOutput(ScoreOutput):
 # class TimeoutException(Exception):
 #     pass
 
+def do_civic_labelling_list(texts):
+    labels = areCivic(texts)
+    return labels
+
+@app.task(bind=True, time_limit=KILL_DEADLINE_SECONDS, soft_time_limit=TIME_LIMIT_SECONDS)
+def civic_labeller_list(self, list_input: list):
+    """ Model to classify civic content
+
+    Args:
+        list_input: List of dicts that contain `item_id` and `text`
+
+    Returns:
+        dict[str, Any]: The result of the sentiment scoring task. The result is a dictionary
+                        representation of CivicLabelOutput
+
+    The results are stored in the Celery result backend.
+    """
+    #logger.info(f"Task === entering civic_labeller_list")
+    #logger.info(list_input)
+    texts = [item['text'] for item in list_input]
+    #start = time.time()
+    task_id = self.request.id
+    worker_id = self.request.hostname
+    logger.info(f"Task {task_id} started by {worker_id}")
+
+    labels = do_civic_labelling_list(texts)
+    new_list = [{'item_id': item['item_id'], 'label': label} for item, label in zip(list_input, labels)]
+    logger.info(new_list)
+    return new_list
+
 
 def do_civic_labelling(input: CivicLabelInput) -> CivicLabelOutput:
     label = isCivic(input.text)
