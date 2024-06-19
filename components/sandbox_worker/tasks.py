@@ -22,21 +22,6 @@ REDIS_DB = f"{os.getenv('REDIS_CONNECTION_STRING', 'redis://localhost:6379')}/0"
 DB_URI = os.getenv("SCRAPER_DB_URI")
 assert DB_URI, "SCRAPER_DB_URI environment variable must be set"
 
-# # Dummy classifiers:
-
-# import random
-
-# def getBridgeScore(text):
-
-#     return random.random()
-
-# def isCivic(text):
-#     p = random.random()
-#     if p > 0.8:
-#         return True
-#     else:
-#         return False
-
 
 def refresh_posts_in_redis():
     """

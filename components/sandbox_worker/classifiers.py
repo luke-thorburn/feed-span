@@ -1,5 +1,7 @@
 import torch
 import torch. multiprocessing as mp
+mp.set_start_method('spawn')
+
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
 from transformers import DistilBertModel, DistilBertTokenizer, DistilBertForSequenceClassification
 import os
@@ -16,7 +18,6 @@ logger = logging.getLogger(__name__)
 
 
 # Check if GPU is available and move the model to the appropriate device
-mp.set_start_method('spawn')
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 civic_tokenizer = AutoTokenizer.from_pretrained("sandbox_worker/model_civic")
