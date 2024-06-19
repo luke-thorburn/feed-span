@@ -234,11 +234,11 @@ def setup_periodic_tasks(sender, **kwargs):
     task1 = ScheduledTask(
         process_scraped_posts,
         args=("2017-05-31", "2017-06-01"),
-        interval_seconds=600,
+        interval_seconds=60,
     )
     task2 = ScheduledTask(
         sync_databases,
         args=("dummy_argument",),   
-        interval_seconds=600,
+        interval_seconds=60,
     )
     schedule_tasks(app, [task1, task2], logger=logger)
