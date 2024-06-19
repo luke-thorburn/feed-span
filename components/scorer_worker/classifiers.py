@@ -28,7 +28,6 @@ civic_model.to(device)
 
 def areCivic(texts):
 
-
     # Tokenize the list of texts
     inputs = civic_tokenizer(texts, return_tensors="pt", truncation=True, padding=True).to(device)
 

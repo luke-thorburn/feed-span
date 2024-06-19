@@ -72,6 +72,11 @@ services:
       CELERY_BROKER: redis://redis-celery-broker:6380
       CELERY_BACKEND: redis://redis-celery-broker:6380
       CIVIC_MODEL_S3_URL: https://feed-span-models.s3.us-east-2.amazonaws.com/civic_model.safetensors
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
     command: ["poetry", "run", "celery", "-A", "scorer_worker.tasks", "worker", "-Q", "scorer", "--loglevel=info", "--pool=solo"]
 
   celery-scorer-worker1:
@@ -84,6 +89,11 @@ services:
       CELERY_BROKER: redis://redis-celery-broker:6380
       CELERY_BACKEND: redis://redis-celery-broker:6380
       CIVIC_MODEL_S3_URL: https://feed-span-models.s3.us-east-2.amazonaws.com/civic_model.safetensors
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
     command: ["poetry", "run", "celery", "-A", "scorer_worker.tasks", "worker", "-Q", "scorer", "--loglevel=info", "--pool=solo"]
 
 
