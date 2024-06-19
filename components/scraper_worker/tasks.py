@@ -92,7 +92,7 @@ async def _apify_query(platform: str) -> list[dict]:
         run = client.actor("KoJrdxJCTtpon81KY").call(run_input=run_input)
         
         results = client.dataset(run["defaultDatasetId"]).list_items(
-            fields="url,time,text"
+            fields="url,topLevelUrl,time,text"
         ).items
     
     elif platform == 'twitter':

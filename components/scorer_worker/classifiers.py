@@ -1,6 +1,6 @@
 import torch
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
-# from transformers import DistilBertModel, DistilBertTokenizer, DistilBertForSequenceClassification
+from transformers import DistilBertModel, DistilBertTokenizer, DistilBertForSequenceClassification
 import os
 import logging
 
@@ -21,7 +21,7 @@ civic_tokenizer = AutoTokenizer.from_pretrained("scorer_worker/model_civic")
 civic_model = AutoModelForSequenceClassification.from_pretrained("scorer_worker/model_civic")
 civic_model.to(device)
 
-# Load pre-trained BERT model and tokenizer
+# # Load pre-trained BERT model and tokenizer
 # bridge_tokenizer = DistilBertTokenizer.from_pretrained("scorer_worker/model_bridging")
 # bridge_model = DistilBertForSequenceClassification.from_pretrained("scorer_worker/model_bridging") 
 # bridge_model.to(device)
@@ -47,23 +47,23 @@ def areCivic(texts):
     # Return list of booleans indicating if each text is "civic"
     return [label == 1 for label in predicted_labels]
 
-def getBridgeScore(text):
+# def getBridgeScore(text):
 
-    # Tokenize the input text
-    logger.info(f'===== running on {device}')
-    inputs = bridge_tokenizer(text, return_tensors='pt', padding=True, truncation=True).to(device)
-    logger.info(f'===== tokenized')
-    input_ids = inputs['input_ids'].to(device)
-    attention_mask = inputs['attention_mask'].to(device)
+#     # Tokenize the input text
+#     logger.info(f'===== running on {device}')
+#     inputs = bridge_tokenizer(text, return_tensors='pt', padding=True, truncation=True).to(device)
+#     logger.info(f'===== tokenized')
+#     input_ids = inputs['input_ids'].to(device)
+#     attention_mask = inputs['attention_mask'].to(device)
     
-    # Perform inference
-    bridge_model.eval()
-    with torch.no_grad():
-        outputs = bridge_model(input_ids, attention_mask=attention_mask)
-        prediction = outputs.logits.item()
-    logger.info(f'===== predicted !!!')
+#     # Perform inference
+#     bridge_model.eval()
+#     with torch.no_grad():
+#         outputs = bridge_model(input_ids, attention_mask=attention_mask)
+#         prediction = outputs.logits.item()
+#     logger.info(f'===== predicted !!!')
     
-    return prediction
+#     return prediction
 
 
 def isCivic(text):
@@ -84,10 +84,3 @@ def isCivic(text):
         return True
     else:
         return False
-
-  
-
-if __name__ == "__main__":
-    print("Hello, World!")
-
-

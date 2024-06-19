@@ -6,7 +6,7 @@ import psycopg2
 import redis
 from util.scheduler import ScheduledTask, schedule_tasks
 
-from scorer_worker.classifiers import isCivic, getBridgeScore
+from sandbox_worker.classifiers import isCivic, getBridgeScore
 
 from sandbox_worker.celery_app import app
 import scraper_worker.sql_statements as my_sql
