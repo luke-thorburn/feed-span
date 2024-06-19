@@ -132,11 +132,11 @@ def rank(ranking_request: RankingRequest) -> RankingResponse:
                     "id": candidate['id'],
                     "url": candidate['url']
                 })
-                changelog.append(
+                changelog.append({
                     "id_removed": id,
                     "id_inserted": candidate['id'],
                     "bridging_score_inserted": candidate['bridging_score']
-                )
+                })
                 counter += 1
             else:
                 ranked_ids.append(id)
@@ -160,11 +160,11 @@ def rank(ranking_request: RankingRequest) -> RankingResponse:
                         "id": candidate['id'],
                         "url": candidate['url']
                     })
-                    changelog.append(
+                    changelog.append({
                         "id_removed": None,
                         "id_inserted": candidate['id'],
                         "bridging_score_inserted": candidate['bridging_score'],
-                    )
+                    })
                     counter += 1
 
 

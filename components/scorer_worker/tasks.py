@@ -40,7 +40,7 @@ import time
 from typing import Any
 
 from pydantic import BaseModel, Field
-from scorer_worker.classifiers import isCivic, areCivic, getBridgeScore
+from scorer_worker.classifiers import isCivic
 
 
 from scorer_worker.celery_app import app

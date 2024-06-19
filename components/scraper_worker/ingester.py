@@ -111,7 +111,7 @@ def process_success(task_id: str, timestamp: datetime, results: list[dict]):
         rows = [
             ScraperData(
                 platform="facebook",
-                post_id=str(uuid.uuid4())
+                post_id=str(uuid.uuid4()),
                 url=result["topLevelUrl"],
                 text=result["text"],
                 posted_at=result["time"]

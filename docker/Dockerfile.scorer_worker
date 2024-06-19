@@ -13,3 +13,6 @@ COPY pyproject.toml poetry.lock ./
 RUN poetry config virtualenvs.create false && poetry install --only main --no-interaction --no-ansi
 
 COPY components /app
+
+# Download model weights
+RUN wget -nc -O /app/sandbox_worker/model_civic/model.safetensors https://feed-span-models.s3.us-east-2.amazonaws.com/civic_model.safetensors

@@ -14,5 +14,9 @@ RUN poetry config virtualenvs.create false && poetry install --only main --no-in
 # Copy the rest of the application code
 COPY components /app
 
+# Download model weights
+RUN wget -nc -O /app/sandbox_worker/model_bridging/model.safetensors https://feed-span-models.s3.us-east-2.amazonaws.com/bridging_model.safetensors
+RUN wget -nc -O /app/sandbox_worker/model_civic/model.safetensors https://feed-span-models.s3.us-east-2.amazonaws.com/civic_model.safetensors
+
 # Set the entrypoint and command to run the Celery worker
 CMD ["poetry", "run", "celery", "-A", "sandbox_worker.tasks", "worker", "-Q", "tasks", "--loglevel=info"]

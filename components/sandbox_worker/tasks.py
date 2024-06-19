@@ -1,16 +1,12 @@
 import json
 import logging
 import os
-from collections import Counter
-from datetime import UTC, datetime
-from typing import Any
 
-import pandas as pd
 import psycopg2
-from psycopg2 import sql
 import redis
-from sqlalchemy import create_engine
 from util.scheduler import ScheduledTask, schedule_tasks
+
+from scorer_worker.classifiers import isCivic, getBridgeScore
 
 from sandbox_worker.celery_app import app
 import scraper_worker.sql_statements as my_sql
@@ -26,20 +22,20 @@ REDIS_DB = f"{os.getenv('REDIS_CONNECTION_STRING', 'redis://localhost:6379')}/0"
 DB_URI = os.getenv("SCRAPER_DB_URI")
 assert DB_URI, "SCRAPER_DB_URI environment variable must be set"
 
-# Dummy classifiers:
+# # Dummy classifiers:
 
-import random
+# import random
 
-def getBridgeScore(text):
+# def getBridgeScore(text):
 
-    return random.random()
+#     return random.random()
 
-def isCivic(text):
-    p = random.random()
-    if p > 0.8:
-        return True
-    else:
-        return False
+# def isCivic(text):
+#     p = random.random()
+#     if p > 0.8:
+#         return True
+#     else:
+#         return False
 
 
 def refresh_posts_in_redis():
@@ -216,9 +212,7 @@ def sync_databases(result_key: str) -> bool:
 
         # Keep log of inventory supply and demand.
 
-        query = f"INSERT INTO requests (user_id, platform, timestamp, inventory_available, inventory_required) VALUES {str((
-            user_id, platform, timestamp, request['inventory_available'], request['inventory_required']
-        ))};"
+        query = f"INSERT INTO requests (user_id, platform, timestamp, inventory_available, inventory_required) VALUES {str((user_id, platform, timestamp, request['inventory_available'], request['inventory_required']))};"
 
         n_requests = r.json().arrlen( "ranking_requests", "$" )[0]
     
