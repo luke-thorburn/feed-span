@@ -1,6 +1,4 @@
 import torch
-import torch. multiprocessing as mp
-mp.set_start_method('spawn')
 
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
 from transformers import DistilBertModel, DistilBertTokenizer, DistilBertForSequenceClassification
