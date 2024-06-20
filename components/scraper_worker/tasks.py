@@ -110,9 +110,26 @@ async def _apify_query(platform: str) -> list[dict]:
             fields="type,id,url,text,createdAt"
         ).items
     
-    # elif platform == 'reddit':
+    elif platform == 'reddit':
     
-    #     ...
+        run_input = {
+            "startUrls": [ f"https://www.reddit.com/r/{src['SUBREDDIT']}/" for src in sources if src['SUBREDDIT'] ],
+            "maxItems": 10000,
+            "includeComments": False,
+            "proxy": {
+                "useApifyProxy": True,
+                "apifyProxyGroups": [
+                    "RESIDENTIAL"
+                ],
+                "apifyProxyCountry": "US"
+            }
+        }
+        
+        run = client.actor("jwR5FKaWaGSmkeq2b").call(run_input=run_input)
+        
+        results = client.dataset(run["defaultDatasetId"]).list_items(
+            fields="title,text,url,createdAt"
+        ).items
 
     return results
 
@@ -151,17 +168,17 @@ def setup_periodic_tasks(sender, **kwargs):
             "function": apify_query,
             "args": ["facebook"],
         },
-        # "reddit": {
-        #     "function": apify_query,
-        #     "args": ["reddit"],
-        # },
+        "reddit": {
+            "function": apify_query,
+            "args": ["reddit"],
+        },
     }
     scheduled_tasks = [
         ScheduledTask(
             task["function"],
             args=task["args"],
             options={"task_id": task_id},
-            interval_seconds=600,
+            interval_seconds=60,
         )
         for task_id, task in task_manifest.items()
     ]

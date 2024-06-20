@@ -74,13 +74,12 @@ def refresh_posts_in_redis():
 
 
 @app.task
-def process_scraped_posts(d1: str, d2: str) -> bool:
+def process_scraped_posts() -> bool:
     """For newly-scraped posts, run the civic classifier, if civic, run the bridging
     classifier, if bridging, flag as such, else delete.
 
     Returns:
         bool: True if the task was successful.
-
     """
 
     con = psycopg2.connect(DB_URI)
@@ -117,7 +116,7 @@ def process_scraped_posts(d1: str, d2: str) -> bool:
 
 
 @app.task
-def sync_databases(result_key: str) -> bool:
+def sync_databases() -> bool:
     """
     This function performs a routine sync between redis and postgres.
     
@@ -211,19 +210,40 @@ def sync_databases(result_key: str) -> bool:
     return True
 
 
+@app.task
+def refresh_postgres_indices() -> bool:
+    """Re-index the indices for the posts table in postgres.
+    """
+
+    con = psycopg2.connect(DB_URI)
+
+    try:
+
+        cur = con.cursor()
+        cur.execute(my_sql.POSTGRES_REFRESH_INDEXES_POSTS)
+        con.commit()
+        
+        return True
+    
+    finally:
+        con.close()
+
+
 @app.on_after_finalize.connect
 def setup_periodic_tasks(sender, **kwargs):
     """Setup periodic tasks for the worker.
     """
     logger.info("Setting up periodic tasks")
-    task1 = ScheduledTask(
+    scrape = ScheduledTask(
         process_scraped_posts,
-        args=("2017-05-31", "2017-06-01"),
         interval_seconds=60,
     )
-    task2 = ScheduledTask(
+    sync = ScheduledTask(
         sync_databases,
-        args=("dummy_argument",),   
         interval_seconds=60,
     )
-    schedule_tasks(app, [task1, task2], logger=logger)
+    index = ScheduledTask(
+        refresh_postgres_indices,
+        interval_seconds=43200, # every 12 hours
+    )
+    schedule_tasks(app, [scrape, sync, index], logger=logger)

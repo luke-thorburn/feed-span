@@ -27,7 +27,7 @@ class ScheduledTask:
         task: Callable,
         *,
         interval_seconds: int,
-        args: Iterable,
+        args: Optional[Iterable] = (),
         kwargs: Optional[dict] = None,
         options: Optional[dict] = None,
     ):

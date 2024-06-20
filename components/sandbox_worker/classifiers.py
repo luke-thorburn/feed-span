@@ -1,8 +1,6 @@
 import torch
 
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
-from transformers import DistilBertModel, DistilBertTokenizer, DistilBertForSequenceClassification
-import os
 import logging
 
 logging.basicConfig(
@@ -23,8 +21,8 @@ civic_model = AutoModelForSequenceClassification.from_pretrained("sandbox_worker
 civic_model.to(device)
 
 # Load pre-trained BERT model and tokenizer
-bridge_tokenizer = DistilBertTokenizer.from_pretrained("sandbox_worker/model_bridging")
-bridge_model = DistilBertForSequenceClassification.from_pretrained("sandbox_worker/model_bridging") 
+bridge_tokenizer = AutoTokenizer.from_pretrained("sandbox_worker/model_bridging")
+bridge_model = AutoModelForSequenceClassification.from_pretrained("sandbox_worker/model_bridging")
 bridge_model.to(device)
 
 def areCivic(texts):

@@ -1,39 +1,39 @@
 {
   "added_tokens_decoder": {
     "0": {
-      "content": "[PAD]",
+      "content": "<s>",
       "lstrip": false,
       "normalized": false,
       "rstrip": false,
       "single_word": false,
       "special": true
     },
-    "100": {
-      "content": "[UNK]",
+    "1": {
+      "content": "<pad>",
       "lstrip": false,
       "normalized": false,
       "rstrip": false,
       "single_word": false,
       "special": true
     },
-    "101": {
-      "content": "[CLS]",
+    "2": {
+      "content": "</s>",
       "lstrip": false,
       "normalized": false,
       "rstrip": false,
       "single_word": false,
       "special": true
     },
-    "102": {
-      "content": "[SEP]",
+    "3": {
+      "content": "<unk>",
       "lstrip": false,
       "normalized": false,
       "rstrip": false,
       "single_word": false,
       "special": true
     },
-    "103": {
-      "content": "[MASK]",
+    "64000": {
+      "content": "<mask>",
       "lstrip": false,
       "normalized": false,
       "rstrip": false,
@@ -41,17 +41,15 @@
       "special": true
     }
   },
+  "bos_token": "<s>",
   "clean_up_tokenization_spaces": true,
-  "cls_token": "[CLS]",
-  "do_basic_tokenize": true,
-  "do_lower_case": true,
-  "mask_token": "[MASK]",
-  "model_max_length": 512,
-  "never_split": null,
-  "pad_token": "[PAD]",
-  "sep_token": "[SEP]",
-  "strip_accents": null,
-  "tokenize_chinese_chars": true,
-  "tokenizer_class": "DistilBertTokenizer",
-  "unk_token": "[UNK]"
+  "cls_token": "<s>",
+  "eos_token": "</s>",
+  "mask_token": "<mask>",
+  "model_max_length": 128,
+  "normalization": true,
+  "pad_token": "<pad>",
+  "sep_token": "</s>",
+  "tokenizer_class": "BertweetTokenizer",
+  "unk_token": "<unk>"
 }

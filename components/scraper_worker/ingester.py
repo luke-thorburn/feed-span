@@ -118,6 +118,17 @@ def process_success(task_id: str, timestamp: datetime, results: list[dict]):
             )
             for result in results
         ]
+    elif task_id == "reddit":
+        rows = [
+            ScraperData(
+                platform="reddit",
+                post_id=str(uuid.uuid4()),
+                url=result["url"],
+                text=f"{result['title']} {result['text']}",
+                posted_at=result["createdAt"]
+            )
+            for result in results
+        ]
     persist_data(rows)
 
 

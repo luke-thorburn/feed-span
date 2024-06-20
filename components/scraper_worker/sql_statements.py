@@ -20,6 +20,12 @@ CREATE INDEX IF NOT EXISTS idx_scraped_at ON {table_name}(scraped_at);
 CREATE INDEX IF NOT EXISTS idx_post_id ON {table_name}(post_id);
 CREATE INDEX IF NOT EXISTS idx_platform ON {table_name}(platform);
 CREATE INDEX IF NOT EXISTS idx_posted_at ON {table_name}(posted_at);
+CREATE INDEX IF NOT EXISTS idx_is_classified ON {table_name}(is_classified);
+CREATE INDEX IF NOT EXISTS idx_is_civic ON {table_name}(is_civic);
+"""
+
+POSTGRES_REFRESH_INDEXES_POSTS = """
+REINDEX TABLE posts;
 """
 
 POSTGRES_CREATE_TABLE_CHANGES = """

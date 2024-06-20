@@ -1,4 +1,4 @@
-.PHONY: test run
+.PHONY: run
 
 # use the new docker compose command if available or the legacy docker-compose command
 DOCKER_COMPOSE := $(shell \
@@ -15,14 +15,3 @@ DOCKER_COMPOSE := $(shell \
 
 run:
 	$(DOCKER_COMPOSE) up --build
-
-test:
-	$(DOCKER_COMPOSE) up -d database redis-celery-broker redis
-	poetry run pytest components/sandbox_worker/*_test.py
-	poetry run pytest components/scorer_worker/*_test.py
-	$(DOCKER_COMPOSE) down
-
-ci:
-	$(DOCKER_COMPOSE) up -d database
-	./components/ci.sh
-	$(DOCKER_COMPOSE) down
