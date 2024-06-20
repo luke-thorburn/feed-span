@@ -102,6 +102,7 @@ async def _apify_query(platform: str) -> list[dict]:
             "twitterHandles": [ src['TW_HANDLE'] for src in sources if src['TW_HANDLE'] ],
             "tweetLanguage": "en",
             "start": yesterday,
+            "maxItems": 5000,
             "maxTweetsPerQuery": 10,
         }
         

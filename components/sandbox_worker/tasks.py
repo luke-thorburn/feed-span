@@ -67,41 +67,41 @@ def refresh_posts_in_redis():
     return True
 
 
-import random
+# import random
 
-@app.task
-def dummy_redis_data() -> bool:
+# @app.task
+# def dummy_redis_data() -> bool:
     
-    con = psycopg2.connect(DB_URI)
-    cur = con.cursor()
-    r = redis.Redis.from_url(REDIS_DB)
+#     con = psycopg2.connect(DB_URI)
+#     cur = con.cursor()
+#     r = redis.Redis.from_url(REDIS_DB)
 
-    # Fetch posts from postgres.
+#     # Fetch posts from postgres.
 
-    posts = {}
+#     posts = {}
 
-    for platform in ["twitter", "facebook", "reddit"]:
-        items = []
-        for _ in range(5000):
-            items.append({
-                'post_id': str(random.random()),
-                'url': f"https://{platform}.com/{random.random()}",
-                'scraped_at': 'datetime',
-                'posted_at': 'datetime',
-                'bridging_score': random.random(),
-                'recommended_to': []
-            })
-        posts[platform] = items
+#     for platform in ["twitter", "facebook", "reddit"]:
+#         items = []
+#         for _ in range(5000):
+#             items.append({
+#                 'post_id': str(random.random()),
+#                 'url': f"https://{platform}.com/{random.random()}",
+#                 'scraped_at': 'datetime',
+#                 'posted_at': 'datetime',
+#                 'bridging_score': random.random(),
+#                 'recommended_to': []
+#             })
+#         posts[platform] = items
 
-    # Write posts to redis.
+#     # Write posts to redis.
 
-    r.json().set( "posts_twitter",  "$", posts['twitter'] )
-    r.json().set( "posts_facebook", "$", posts['facebook'] )
-    r.json().set( "posts_reddit",   "$", posts['reddit'] )
+#     r.json().set( "posts_twitter",  "$", posts['twitter'] )
+#     r.json().set( "posts_facebook", "$", posts['facebook'] )
+#     r.json().set( "posts_reddit",   "$", posts['reddit'] )
 
-    con.close()
+#     con.close()
 
-    return True
+#     return True
 
 
 @app.task
@@ -265,10 +265,10 @@ def setup_periodic_tasks(sender, **kwargs):
     """Setup periodic tasks for the worker.
     """
     logger.info("Setting up periodic tasks")
-    dummy = ScheduledTask(
-        process_scraped_posts,
-        interval_seconds=60,
-    )
+    # dummy = ScheduledTask(
+    #     process_scraped_posts,
+    #     interval_seconds=60,
+    # )
     scrape = ScheduledTask(
         process_scraped_posts,
         interval_seconds=1200, # every 30 minutes
@@ -281,4 +281,4 @@ def setup_periodic_tasks(sender, **kwargs):
         refresh_postgres_indices,
         interval_seconds=43200, # every 12 hours
     )
-    schedule_tasks(app, [dummy, scrape, sync, index], logger=logger)
+    schedule_tasks(app, [scrape, sync, index], logger=logger)
