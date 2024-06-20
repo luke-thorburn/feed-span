@@ -6,10 +6,6 @@ import psycopg2
 import redis
 from util.scheduler import ScheduledTask, schedule_tasks
 
-if __name__ == "__main__":
-    import torch.multiprocessing as mp
-    mp.set_start_method('spawn')
-
 from sandbox_worker.classifiers import isCivic, getBridgeScore
 
 from sandbox_worker.celery_app import app
