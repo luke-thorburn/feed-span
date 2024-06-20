@@ -119,7 +119,7 @@ services:
       CELERY_BACKEND: redis://redis-celery-broker:6380
       SCRAPER_DB_URI: postgres://postgres:postgres@feed-span-database-1:5432/main?sslmode=disable
       RESULTS_ENDPOINT: http://scraper-ingester:8002/data/scraper
-      APIFY_API_KEY: apify_api_1fNa155j5XibJ9tU9QaIR2tJiQ46XT2j4GfG
+      APIFY_API_KEY: <api_key_goes_here>
     command: ["poetry", "run", "celery", "-A", "scraper_worker.tasks", "worker", "-Q", "scraper", "--loglevel=info"]
 
   scraper-ingester:
