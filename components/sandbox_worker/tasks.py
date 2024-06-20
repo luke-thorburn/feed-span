@@ -38,35 +38,66 @@ def refresh_posts_in_redis():
 
     # Fetch posts from postgres.
 
-    # TODO: Ensure timestamp formats are all consistent.
-    # TODO: Ensure ids formats are all consistent.
+    posts = {}
 
-    query = f"SELECT post_id, platform, url, scraped_at, posted_at, bridging_score, recommended_to FROM posts WHERE is_classified = TRUE AND is_civic = TRUE ORDER BY scraped_at DESC LIMIT 1000;"
-    cur.execute(query)
-    results = cur.fetchall()
-    items = []
-    for row in results:
-        items.append({
-            'post_id': row[0],
-            'platform': row[1],
-            'url': row[2],
-            'scraped_at': str(row[3]),
-            'posted_at': str(row[4]),
-            'bridging_score': row[5],
-            'recommended_to': json.loads(row[6])
-        })
+    for platform in ["twitter", "facebook", "reddit"]:
+        query = f"SELECT post_id, url, scraped_at, posted_at, bridging_score, recommended_to FROM posts WHERE platform = '{platform}' AND is_classified = TRUE AND is_civic = TRUE ORDER BY scraped_at DESC LIMIT 5000;"
+        cur.execute(query)
+        results = cur.fetchall()
+        items = []
+        for row in results:
+            items.append({
+                'post_id': row[0],
+                'url': row[1],
+                'scraped_at': str(row[2]),
+                'posted_at': str(row[3]),
+                'bridging_score': row[4],
+                'recommended_to': json.loads(row[5])
+            })
+        posts[platform] = items
 
-    # Wrangle into correct format.
-
-    posts_twitter = [item for item in items if item['platform'] == 'twitter']
-    posts_facebook = [item for item in items if item['platform'] == 'facebook']
-    posts_reddit = [item for item in items if item['platform'] == 'reddit']
-    
     # Write posts to redis.
 
-    r.json().set( "posts_twitter",  "$", posts_twitter )
-    r.json().set( "posts_facebook", "$", posts_reddit )
-    r.json().set( "posts_reddit",   "$", posts_facebook )
+    r.json().set( "posts_twitter",  "$", posts['twitter'] )
+    r.json().set( "posts_facebook", "$", posts['facebook'] )
+    r.json().set( "posts_reddit",   "$", posts['reddit'] )
+
+    con.close()
+
+    return True
+
+
+import random
+
+@app.task
+def dummy_redis_data() -> bool:
+    
+    con = psycopg2.connect(DB_URI)
+    cur = con.cursor()
+    r = redis.Redis.from_url(REDIS_DB)
+
+    # Fetch posts from postgres.
+
+    posts = {}
+
+    for platform in ["twitter", "facebook", "reddit"]:
+        items = []
+        for _ in range(5000):
+            items.append({
+                'post_id': str(random.random()),
+                'url': f"https://{platform}.com/{random.random()}",
+                'scraped_at': 'datetime',
+                'posted_at': 'datetime',
+                'bridging_score': random.random(),
+                'recommended_to': []
+            })
+        posts[platform] = items
+
+    # Write posts to redis.
+
+    r.json().set( "posts_twitter",  "$", posts['twitter'] )
+    r.json().set( "posts_facebook", "$", posts['facebook'] )
+    r.json().set( "posts_reddit",   "$", posts['reddit'] )
 
     con.close()
 
@@ -234,16 +265,20 @@ def setup_periodic_tasks(sender, **kwargs):
     """Setup periodic tasks for the worker.
     """
     logger.info("Setting up periodic tasks")
-    scrape = ScheduledTask(
+    dummy = ScheduledTask(
         process_scraped_posts,
         interval_seconds=60,
     )
+    scrape = ScheduledTask(
+        process_scraped_posts,
+        interval_seconds=1200, # every 30 minutes
+    )
     sync = ScheduledTask(
         sync_databases,
-        interval_seconds=60,
+        interval_seconds=300, # every 5 minutes
     )
     index = ScheduledTask(
         refresh_postgres_indices,
         interval_seconds=43200, # every 12 hours
     )
-    schedule_tasks(app, [scrape, sync, index], logger=logger)
+    schedule_tasks(app, [dummy, scrape, sync, index], logger=logger)

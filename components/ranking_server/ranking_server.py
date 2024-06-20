@@ -98,14 +98,6 @@ def rank(ranking_request: RankingRequest) -> RankingResponse:
     if type(replacement_candidates) != 'list':
         replacement_candidates = []
 
-    # replacement_candidates = [
-    # {'bridging_score': 0.556, 'id': 'b001', 'url': 'https://twitter.com/Horse_ebooks/status/2184395932409569281'},
-    # {'bridging_score': 0.688, 'id': 'b002', 'url': 'https://twitter.com/Horse_ebooks/status/2184395932409569282'},
-    # {'bridging_score': 0.312, 'id': 'b003', 'url': 'https://twitter.com/Horse_ebooks/status/2184395932409569283'},] # dummy posts for testing
-
-    # TODO: Figure out how to trade off recency with bridgingness. For now, just
-    #       assume all posts in redis are sufficiently recent.
-
 
     # Sort them from most to least bridging.
     replacement_candidates = sorted(

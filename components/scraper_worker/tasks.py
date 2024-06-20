@@ -86,7 +86,8 @@ async def _apify_query(platform: str) -> list[dict]:
 
         run_input = {
             "startUrls": [ { "url": src['FB_URL'] } for src in sources if src['FB_URL'] ],
-            "resultsLimit": 1,
+            "resultsLimit": 5000,
+            "onlyPostsNewerThan": yesterday
         }
         
         run = client.actor("KoJrdxJCTtpon81KY").call(run_input=run_input)
@@ -101,7 +102,7 @@ async def _apify_query(platform: str) -> list[dict]:
             "twitterHandles": [ src['TW_HANDLE'] for src in sources if src['TW_HANDLE'] ],
             "tweetLanguage": "en",
             "start": yesterday,
-            "maxTweetsPerQuery": 1,
+            "maxTweetsPerQuery": 10,
         }
         
         run = client.actor("61RPP7dywgiy0JPD0").call(run_input=run_input)
@@ -114,7 +115,8 @@ async def _apify_query(platform: str) -> list[dict]:
     
         run_input = {
             "startUrls": [ f"https://www.reddit.com/r/{src['SUBREDDIT']}/" for src in sources if src['SUBREDDIT'] ],
-            "maxItems": 10000,
+            "maxItems": 5000,
+            "time": "day",
             "includeComments": False,
             "proxy": {
                 "useApifyProxy": True,
@@ -178,7 +180,7 @@ def setup_periodic_tasks(sender, **kwargs):
             task["function"],
             args=task["args"],
             options={"task_id": task_id},
-            interval_seconds=60,
+            interval_seconds=21600, # every 6 hours (might make more frequent)
         )
         for task_id, task in task_manifest.items()
     ]

@@ -103,7 +103,7 @@ def process_success(task_id: str, timestamp: datetime, results: list[dict]):
                 post_id=str(uuid.uuid4()),
                 url=result["url"],
                 text=result["text"],
-                posted_at=result["createdAt"]
+                posted_at=datetime.strptime(result["createdAt"], "%a %b %d %H:%M:%S %z %Y").isoformat()
             )
             for result in results
         ]
@@ -114,7 +114,7 @@ def process_success(task_id: str, timestamp: datetime, results: list[dict]):
                 post_id=str(uuid.uuid4()),
                 url=result["topLevelUrl"],
                 text=result["text"],
-                posted_at=result["time"]
+                posted_at=datetime.strptime(result["time"], "%Y-%m-%d %H:%M:%S").isoformat()
             )
             for result in results
         ]
@@ -125,7 +125,7 @@ def process_success(task_id: str, timestamp: datetime, results: list[dict]):
                 post_id=str(uuid.uuid4()),
                 url=result["url"],
                 text=f"{result['title']} {result['text']}",
-                posted_at=result["createdAt"]
+                posted_at=datetime.fromtimestamp(result["createdAt"]).isoformat()
             )
             for result in results
         ]
